@@ -15,3 +15,16 @@
   }
 
 * Apply patches
+
+   1). frameworks
+   
+   2). fix GN build error
+   
+   3). add android_gradler
+   
+   4). add sdk/libs/ffmpeg
+   
+   5). fix sdk/android_gradle/webrtc/CMakeList.txt:    
+   
+   ${WEBRTC_REPO}/${WEBRTC_BUILD_DIR}/gen/logging/rtc_event_log/*.cc
+
