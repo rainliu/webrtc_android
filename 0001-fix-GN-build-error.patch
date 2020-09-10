@@ -1,0 +1,85 @@
+From f3460b9050733768f8e9393e23a7f392b5e6547e Mon Sep 17 00:00:00 2001
+From: "Yu (Ryan) Liu" <yuliu@fb.com>
+Date: Thu, 10 Sep 2020 01:29:14 -0700
+Subject: [PATCH] fix GN build error
+
+---
+ examples/BUILD.gn                  | 4 ++--
+ examples/androidnativeapi/BUILD.gn | 2 +-
+ rtc_tools/network_tester/BUILD.gn  | 4 ++--
+ webrtc.gni                         | 2 +-
+ 4 files changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/examples/BUILD.gn b/examples/BUILD.gn
+index 55848dad9c..a70667f4e7 100644
+--- a/examples/BUILD.gn
++++ b/examples/BUILD.gn
+@@ -101,7 +101,7 @@ if (is_android) {
+ 
+   rtc_android_library("AppRTCMobile_javalib") {
+     testonly = true
+-    android_manifest_for_lint = "androidapp/AndroidManifest.xml"
++    #android_manifest_for_lint = "androidapp/AndroidManifest.xml"
+ 
+     sources = [
+       "androidapp/src/org/appspot/apprtc/AppRTCAudioManager.java",
+@@ -154,7 +154,7 @@ if (is_android) {
+ 
+   android_resources("AppRTCMobile_resources") {
+     testonly = true
+-    resource_dirs = [ "androidapp/res" ]
++    #resource_dirs = [ "androidapp/res" ]
+     custom_package = "org.appspot.apprtc"
+   }
+ 
+diff --git a/examples/androidnativeapi/BUILD.gn b/examples/androidnativeapi/BUILD.gn
+index 9dd2bf412b..a8c02f859d 100644
+--- a/examples/androidnativeapi/BUILD.gn
++++ b/examples/androidnativeapi/BUILD.gn
+@@ -65,7 +65,7 @@ if (is_android) {
+ 
+   android_resources("resources") {
+     testonly = true
+-    resource_dirs = [ "res" ]
++    #resource_dirs = [ "res" ]
+     custom_package = "org.webrtc.examples.androidnativeapi"
+   }
+ }
+diff --git a/rtc_tools/network_tester/BUILD.gn b/rtc_tools/network_tester/BUILD.gn
+index 8c3a0186d7..ddaed49c50 100644
+--- a/rtc_tools/network_tester/BUILD.gn
++++ b/rtc_tools/network_tester/BUILD.gn
+@@ -115,7 +115,7 @@ if (is_android) {
+ 
+   rtc_android_library("NetworkTesterMobile_javalib") {
+     testonly = true
+-    android_manifest_for_lint = "androidapp/AndroidManifest.xml"
++    #android_manifest_for_lint = "androidapp/AndroidManifest.xml"
+ 
+     sources = [
+       "androidapp/src/com/google/media/networktester/MainActivity.java",
+@@ -130,7 +130,7 @@ if (is_android) {
+ 
+   android_resources("NetworkTesterMobile_resources") {
+     testonly = true
+-    resource_dirs = [ "androidapp/res" ]
++    #resource_dirs = [ "androidapp/res" ]
+     custom_package = "com.google.media.networktester"
+   }
+ 
+diff --git a/webrtc.gni b/webrtc.gni
+index 64a170c23f..ef351616c2 100644
+--- a/webrtc.gni
++++ b/webrtc.gni
+@@ -990,7 +990,7 @@ if (is_android) {
+       if (defined(invoker.min_sdk_version)) {
+         min_sdk_version = invoker.min_sdk_version
+       } else {
+-        min_sdk_version = 16
++        #min_sdk_version = 16
+       }
+ 
+       # Add any arguments defined by the invoker.
+-- 
+2.13.5
+

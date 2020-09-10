@@ -1,0 +1,3223 @@
+From 1b054f397c7b9f2fa9622320a8b1784dc7d5677b Mon Sep 17 00:00:00 2001
+From: "Yu (Ryan) Liu" <yuliu@fb.com>
+Date: Thu, 10 Sep 2020 01:32:38 -0700
+Subject: [PATCH] add gradler
+
+---
+ examples/androidapp/AndroidManifest.xml            |   2 +-
+ sdk/android_gradle/.gitignore                      |   8 +
+ sdk/android_gradle/AppRTCMobile/build.gradle       |  45 +++
+ sdk/android_gradle/README.md                       |  25 ++
+ sdk/android_gradle/build.gradle                    |  39 +++
+ sdk/android_gradle/extract_src_from_gn.py          |  42 +++
+ sdk/android_gradle/ffmpeg_build.sh                 | 112 ++++++++
+ sdk/android_gradle/gradle.properties               |  34 +++
+ .../gradle/wrapper/gradle-wrapper.jar              | Bin 0 -> 53636 bytes
+ .../gradle/wrapper/gradle-wrapper.properties       |   6 +
+ sdk/android_gradle/gradlew                         | 160 +++++++++++
+ sdk/android_gradle/gradlew.bat                     |  90 ++++++
+ sdk/android_gradle/settings.gradle                 |   1 +
+ sdk/android_gradle/webrtc/CMakeLists.txt           | 225 +++++++++++++++
+ sdk/android_gradle/webrtc/build.gradle             |  47 +++
+ .../webrtc/src/main/AndroidManifest.xml            |  19 ++
+ .../src/main/java/com/piasy/avconf/AudioMixer.java | 139 +++++++++
+ .../com/piasy/avconf/HijackCapturerObserver.java   |  83 ++++++
+ .../webrtc/third_party/CMakeLists.txt              |  16 ++
+ .../webrtc/third_party/abseil-cpp/CMakeLists.txt   |   4 +
+ .../webrtc/third_party/boringssl/CMakeLists.txt    |   4 +
+ .../webrtc/third_party/jsoncpp/CMakeLists.txt      |  14 +
+ .../webrtc/third_party/libevent/CMakeLists.txt     |  33 +++
+ .../third_party/libjpeg_turbo/CMakeLists.txt       |  13 +
+ .../webrtc/third_party/libsrtp/CMakeLists.txt      |  40 +++
+ .../webrtc/third_party/libvpx/CMakeLists.txt       | 228 +++++++++++++++
+ .../webrtc/third_party/libyuv/CMakeLists.txt       |   3 +
+ .../webrtc/third_party/opus/CMakeLists.txt         |  23 ++
+ .../webrtc/third_party/pffft/CMakeLists.txt        |  13 +
+ .../webrtc/third_party/protobuf/CMakeLists.txt     |  43 +++
+ .../webrtc/third_party/rnnoise/CMakeLists.txt      |  14 +
+ .../webrtc/third_party/usrsctp/CMakeLists.txt      |  17 ++
+ sdk/android_gradle/webrtc/webrtc.gradle            | 318 +++++++++++++++++++++
+ sdk/android_gradle/webrtc_src_extractor.py         | 138 +++++++++
+ 34 files changed, 1997 insertions(+), 1 deletion(-)
+ create mode 100644 sdk/android_gradle/.gitignore
+ create mode 100644 sdk/android_gradle/AppRTCMobile/build.gradle
+ create mode 100644 sdk/android_gradle/README.md
+ create mode 100644 sdk/android_gradle/build.gradle
+ create mode 100644 sdk/android_gradle/extract_src_from_gn.py
+ create mode 100644 sdk/android_gradle/ffmpeg_build.sh
+ create mode 100644 sdk/android_gradle/gradle.properties
+ create mode 100644 sdk/android_gradle/gradle/wrapper/gradle-wrapper.jar
+ create mode 100644 sdk/android_gradle/gradle/wrapper/gradle-wrapper.properties
+ create mode 100755 sdk/android_gradle/gradlew
+ create mode 100644 sdk/android_gradle/gradlew.bat
+ create mode 100644 sdk/android_gradle/settings.gradle
+ create mode 100644 sdk/android_gradle/webrtc/CMakeLists.txt
+ create mode 100644 sdk/android_gradle/webrtc/build.gradle
+ create mode 100644 sdk/android_gradle/webrtc/src/main/AndroidManifest.xml
+ create mode 100644 sdk/android_gradle/webrtc/src/main/java/com/piasy/avconf/AudioMixer.java
+ create mode 100644 sdk/android_gradle/webrtc/src/main/java/com/piasy/avconf/HijackCapturerObserver.java
+ create mode 100644 sdk/android_gradle/webrtc/third_party/CMakeLists.txt
+ create mode 100644 sdk/android_gradle/webrtc/third_party/abseil-cpp/CMakeLists.txt
+ create mode 100644 sdk/android_gradle/webrtc/third_party/boringssl/CMakeLists.txt
+ create mode 100644 sdk/android_gradle/webrtc/third_party/jsoncpp/CMakeLists.txt
+ create mode 100644 sdk/android_gradle/webrtc/third_party/libevent/CMakeLists.txt
+ create mode 100644 sdk/android_gradle/webrtc/third_party/libjpeg_turbo/CMakeLists.txt
+ create mode 100644 sdk/android_gradle/webrtc/third_party/libsrtp/CMakeLists.txt
+ create mode 100644 sdk/android_gradle/webrtc/third_party/libvpx/CMakeLists.txt
+ create mode 100644 sdk/android_gradle/webrtc/third_party/libyuv/CMakeLists.txt
+ create mode 100644 sdk/android_gradle/webrtc/third_party/opus/CMakeLists.txt
+ create mode 100644 sdk/android_gradle/webrtc/third_party/pffft/CMakeLists.txt
+ create mode 100644 sdk/android_gradle/webrtc/third_party/protobuf/CMakeLists.txt
+ create mode 100644 sdk/android_gradle/webrtc/third_party/rnnoise/CMakeLists.txt
+ create mode 100644 sdk/android_gradle/webrtc/third_party/usrsctp/CMakeLists.txt
+ create mode 100644 sdk/android_gradle/webrtc/webrtc.gradle
+ create mode 100644 sdk/android_gradle/webrtc_src_extractor.py
+
+diff --git a/examples/androidapp/AndroidManifest.xml b/examples/androidapp/AndroidManifest.xml
+index 8a9035e782..205923ee48 100644
+--- a/examples/androidapp/AndroidManifest.xml
++++ b/examples/androidapp/AndroidManifest.xml
+@@ -8,7 +8,7 @@
+     <uses-feature android:name="android.hardware.camera" />
+     <uses-feature android:name="android.hardware.camera.autofocus" />
+     <uses-feature android:glEsVersion="0x00020000" android:required="true" />
+-    <uses-sdk android:minSdkVersion="16" android:targetSdkVersion="29" />
++    <uses-sdk  android:targetSdkVersion="29" />
+ 
+     <uses-permission android:name="android.permission.CAMERA" />
+     <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
+diff --git a/sdk/android_gradle/.gitignore b/sdk/android_gradle/.gitignore
+new file mode 100644
+index 0000000000..34544796ad
+--- /dev/null
++++ b/sdk/android_gradle/.gitignore
+@@ -0,0 +1,8 @@
++**.iml
++.gradle
++/local.properties
++/.idea/
++.DS_Store
++/captures
++**/build
++**/.externalNativeBuild
+diff --git a/sdk/android_gradle/AppRTCMobile/build.gradle b/sdk/android_gradle/AppRTCMobile/build.gradle
+new file mode 100644
+index 0000000000..6f8613f570
+--- /dev/null
++++ b/sdk/android_gradle/AppRTCMobile/build.gradle
+@@ -0,0 +1,45 @@
++apply plugin: 'com.android.application'
++
++android {
++    compileSdkVersion rootProject.ext.androidCompileSdkVersion
++    buildToolsVersion rootProject.ext.androidBuildToolsVersion
++
++    defaultConfig {
++        minSdkVersion rootProject.ext.minSdkVersion
++        targetSdkVersion rootProject.ext.targetSdkVersion
++        versionCode rootProject.ext.releaseVersionCode
++        versionName rootProject.ext.releaseVersionName
++        applicationId "org.appspot.apprtc"
++        multiDexEnabled true
++
++        ndk.abiFilters = ['arm64-v8a']
++
++        sourceSets.main {
++            manifest.srcFile "$rootProject.rootDir/../../examples/androidapp/AndroidManifest.xml"
++            res.srcDirs "$rootProject.rootDir/../../examples/androidapp/res"
++            java.srcDirs "$rootProject.rootDir/../../examples/androidapp/src"
++        }
++    }
++    buildTypes {
++        release {
++            minifyEnabled false
++            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
++        }
++    }
++    compileOptions {
++        sourceCompatibility JavaVersion.VERSION_1_8
++        targetCompatibility JavaVersion.VERSION_1_8
++    }
++    packagingOptions {
++        exclude 'META-INF/MANIFEST.MF'
++    }
++}
++
++dependencies {
++    implementation "com.android.support:appcompat-v7:${rootProject.ext.androidSupportSdkVersion}"
++
++    implementation (name:'autobanh', ext:'jar')
++
++    implementation project(':webrtc')
++    //implementation 'org.webrtc:google-webrtc:1.0.23995'
++}
+diff --git a/sdk/android_gradle/README.md b/sdk/android_gradle/README.md
+new file mode 100644
+index 0000000000..8f5dc62920
+--- /dev/null
++++ b/sdk/android_gradle/README.md
+@@ -0,0 +1,25 @@
++# WebRTC Android Studio project
++
++A reference gradle project that let you explore WebRTC Android in Android Studio.
++
++## Debug native code in Android Studio
++
++Edit `gradle.properties`, set `compile_native_code=true` and other variables according to your WebRTC checkout location, then enjoy :)
++
++Note:
++
+++ You need download and sync WebRTC repo by yourself, this project won't do that for you;
+++ Checkout the same WebRTC commit as this project does, which is [#30432](https://webrtc.googlesource.com/src/+/be99ee8f17f93e06c81e3deb4897dfa8253d3211);
+++ Use the same version of Android SDK and NDK as WebRTC does;
+++ (re)Create `protoc` after updating WebRTC repo, to create the `protoc` program, you need build WebRTC Android via ninja once, let's assume the output dir is `out/android_ninja`, then the `protoc` will be `out/android_ninja/clang_x64/protoc`;
+++ Delete `webrtc_build_dir` after updating WebRTC repo;
++
++## WebRTC src extractor
++
++`python3 webrtc_src_extractor.py <repo dir> <dst dir> <wanted src file, seperated by space>`
++
++If you only want use a small part of WebRTC code, this script could help you find all related sources and headers, and copy them into `dst dir`. Note that it's just a best effort script, you may still need copy some files manually.
++
++## Caveat
++
+++ Delete `webrtc_build_dir` and `.externalNativeBuild`, run `./gradlew genWebrtcSrc`, and "Refresh Linked C++ Projects" (note that "Sync Project with Gradle Files" won't work) before your build and debug, otherwise the generated sources may not be compiled, undefined reference error will happen, e.g. `webrtc::rtclog::Event` related references;
+diff --git a/sdk/android_gradle/build.gradle b/sdk/android_gradle/build.gradle
+new file mode 100644
+index 0000000000..7ba951259d
+--- /dev/null
++++ b/sdk/android_gradle/build.gradle
+@@ -0,0 +1,39 @@
++// Top-level build file where you can add configuration options common to all sub-projects/modules.
++
++buildscript {
++    repositories {
++        jcenter()
++        google()
++    }
++    dependencies {
++        classpath 'com.android.tools.build:gradle:3.4.0'
++
++        // NOTE: Do not place your application dependencies here; they belong
++        // in the individual module build.gradle files
++    }
++}
++
++allprojects {
++    repositories {
++        flatDir {
++            dirs "$rootProject.rootDir/../../examples/androidapp/third_party/autobanh/lib"
++        }
++        jcenter()
++        google()
++    }
++}
++
++task clean(type: Delete) {
++    delete rootProject.buildDir
++}
++
++ext {
++    minSdkVersion = 16
++    androidCompileSdkVersion = 28
++    androidBuildToolsVersion = '28.0.3'
++    targetSdkVersion = 22
++    androidSupportSdkVersion = '28.0.0'
++
++    releaseVersionCode = 1
++    releaseVersionName = '1.0.30022'
++}
+diff --git a/sdk/android_gradle/extract_src_from_gn.py b/sdk/android_gradle/extract_src_from_gn.py
+new file mode 100644
+index 0000000000..ef895be5c1
+--- /dev/null
++++ b/sdk/android_gradle/extract_src_from_gn.py
+@@ -0,0 +1,42 @@
++import sys
++
++def output(lines, start, end, prefix):
++    index = start
++    while index <= end:
++        line = lines[index]
++        splitter = None
++        if '\'' in line:
++            splitter = '\''
++        elif '\"' in line:
++            splitter = '\"'
++        if splitter is not None:
++            path = line.split(splitter)[1]
++            if not path.endswith('.h'):
++                if path.startswith('//'):
++                    print(prefix + path[2:])
++                else:
++                    print(prefix + path)
++        index = index + 1
++
++def extract(gn_path, gn_src_set, output_prefix):
++    with open(gn_path, 'r') as f:
++        content = f.read().split('\n')
++    start_line = -1
++    end_line = -1
++    index = 0
++    all_lines = len(content)
++    while index < all_lines:
++        if content[index].endswith('%s = [' % gn_src_set):
++            start_line = index
++        if start_line != -1 and content[index].endswith(']'):
++            end_line = index
++            break
++        index = index + 1
++    if start_line != -1 and end_line != -1:
++        output(content, start_line + 1, end_line - 1, output_prefix)
++
++if __name__ == '__main__':
++    gn_path = sys.argv[1]
++    gn_src_set = sys.argv[2]
++    output_prefix = sys.argv[3]
++    extract(gn_path, gn_src_set, output_prefix)
+diff --git a/sdk/android_gradle/ffmpeg_build.sh b/sdk/android_gradle/ffmpeg_build.sh
+new file mode 100644
+index 0000000000..9e48f7b8ef
+--- /dev/null
++++ b/sdk/android_gradle/ffmpeg_build.sh
+@@ -0,0 +1,112 @@
++#!/bin/bash
++
++# ffmpeg 4.1.4
++
++# Android
++
++WEBRTC_NDK=/Users/piasy/src/media/webrtc_repo/webrtc_android/src/third_party/android_ndk
++TOOLCHAIN=${WEBRTC_NDK}/toolchains/llvm/prebuilt/darwin-x86_64
++
++./configure \
++--ar=${TOOLCHAIN}/bin/arm-linux-androideabi-ar \
++--as=${TOOLCHAIN}/bin/arm-linux-androideabi-as \
++--cc=${TOOLCHAIN}/bin/armv7a-linux-androideabi16-clang \
++--cxx=${TOOLCHAIN}/bin/armv7a-linux-androideabi16-clang++ \
++--nm=${TOOLCHAIN}/bin/arm-linux-androideabi-nm \
++--ranlib=${TOOLCHAIN}/bin/arm-linux-androideabi-ranlib \
++--strip=${TOOLCHAIN}/bin/arm-linux-androideabi-strip \
++--enable-cross-compile \
++--target-os=android \
++--arch=armv7a \
++--disable-shared --disable-doc --disable-programs \
++--enable-debug --disable-symver --disable-asm \
++--disable-encoders --disable-hwaccels --disable-bsfs --disable-devices --disable-filters \
++--disable-protocols --enable-protocol=file \
++--disable-parsers --enable-parser=mpegaudio --enable-parser=h264 --enable-parser=hevc \
++--disable-demuxers --enable-demuxer=mov --enable-demuxer=mp3 \
++--disable-decoders --enable-decoder=mp3 --enable-decoder=aac \
++--disable-muxers --enable-muxer=matroska \
++--prefix=`pwd`/out_armv7a && \
++make -j16 install && \
++make clean && \
++./configure \
++--ar=${TOOLCHAIN}/bin/aarch64-linux-android-ar \
++--as=${TOOLCHAIN}/bin/aarch64-linux-android-as \
++--cc=${TOOLCHAIN}/bin/aarch64-linux-android21-clang \
++--cxx=${TOOLCHAIN}/bin/aarch64-linux-android21-clang++ \
++--nm=${TOOLCHAIN}/bin/aarch64-linux-android-nm \
++--ranlib=${TOOLCHAIN}/bin/aarch64-linux-android-ranlib \
++--strip=${TOOLCHAIN}/bin/aarch64-linux-android-strip \
++--enable-cross-compile \
++--target-os=android \
++--arch=aarch64 \
++--disable-shared --disable-doc --disable-programs \
++--enable-debug --disable-symver --disable-asm \
++--disable-encoders --disable-hwaccels --disable-bsfs --disable-devices --disable-filters \
++--disable-protocols --enable-protocol=file \
++--disable-parsers --enable-parser=mpegaudio --enable-parser=h264 --enable-parser=hevc \
++--disable-demuxers --enable-demuxer=mov --enable-demuxer=mp3 \
++--disable-decoders --enable-decoder=mp3 --enable-decoder=aac \
++--disable-muxers --enable-muxer=matroska \
++--prefix=`pwd`/out_arm64 && \
++make -j16 install && \
++make clean && \
++./configure \
++--ar=${TOOLCHAIN}/bin/i686-linux-android-ar \
++--as=${TOOLCHAIN}/bin/i686-linux-android-as \
++--cc=${TOOLCHAIN}/bin/i686-linux-android16-clang \
++--cxx=${TOOLCHAIN}/bin/i686-linux-android16-clang++ \
++--nm=${TOOLCHAIN}/bin/i686-linux-android-nm \
++--ranlib=${TOOLCHAIN}/bin/i686-linux-android-ranlib \
++--strip=${TOOLCHAIN}/bin/i686-linux-android-strip \
++--enable-cross-compile \
++--target-os=android \
++--arch=i686 \
++--disable-shared --disable-doc --disable-programs \
++--enable-debug --disable-symver --disable-asm \
++--disable-encoders --disable-hwaccels --disable-bsfs --disable-devices --disable-filters \
++--disable-protocols --enable-protocol=file \
++--disable-parsers --enable-parser=mpegaudio --enable-parser=h264 --enable-parser=hevc \
++--disable-demuxers --enable-demuxer=mov --enable-demuxer=mp3 \
++--disable-decoders --enable-decoder=mp3 --enable-decoder=aac \
++--disable-muxers --enable-muxer=matroska \
++--prefix=`pwd`/out_x86 && \
++make -j16 install && \
++make clean && \
++./configure \
++--ar=${TOOLCHAIN}/bin/x86_64-linux-android-ar \
++--as=${TOOLCHAIN}/bin/x86_64-linux-android-as \
++--cc=${TOOLCHAIN}/bin/x86_64-linux-android21-clang \
++--cxx=${TOOLCHAIN}/bin/x86_64-linux-android21-clang++ \
++--nm=${TOOLCHAIN}/bin/x86_64-linux-android-nm \
++--ranlib=${TOOLCHAIN}/bin/x86_64-linux-android-ranlib \
++--strip=${TOOLCHAIN}/bin/x86_64-linux-android-strip \
++--enable-cross-compile \
++--target-os=android \
++--arch=x86_64 \
++--disable-shared --disable-doc --disable-programs \
++--enable-debug --disable-symver --disable-asm \
++--disable-encoders --disable-hwaccels --disable-bsfs --disable-devices --disable-filters \
++--disable-protocols --enable-protocol=file \
++--disable-parsers --enable-parser=mpegaudio --enable-parser=h264 --enable-parser=hevc \
++--disable-demuxers --enable-demuxer=mov --enable-demuxer=mp3 \
++--disable-decoders --enable-decoder=mp3 --enable-decoder=aac \
++--disable-muxers --enable-muxer=matroska \
++--prefix=`pwd`/out_x86_64 && \
++make -j16 install && \
++make clean
++
++
++
++# iOS, note: libs built in case-sensitive fs are unusable
++# use [FFmpeg iOS build script](https://github.com/kewlbear/FFmpeg-iOS-build-script)
++# with the following configure flags
++#CONFIGURE_FLAGS="--enable-cross-compile --enable-debug --disable-doc \
++#--enable-pic \
++#--disable-programs \
++#--disable-encoders --disable-hwaccels --disable-bsfs --disable-devices --disable-filters \
++#--disable-protocols --enable-protocol=file \
++#--disable-parsers --enable-parser=mpegaudio --enable-parser=h264 --enable-parser=hevc \
++#--disable-demuxers --enable-demuxer=mov --enable-demuxer=mp3 \
++#--disable-decoders --enable-decoder=mp3 --enable-decoder=aac \
++#--disable-muxers --enable-muxer=matroska"
+diff --git a/sdk/android_gradle/gradle.properties b/sdk/android_gradle/gradle.properties
+new file mode 100644
+index 0000000000..a11c5961a7
+--- /dev/null
++++ b/sdk/android_gradle/gradle.properties
+@@ -0,0 +1,34 @@
++# Project-wide Gradle settings.
++
++# IDE (e.g. Android Studio) users:
++# Gradle settings configured through the IDE *will override*
++# any settings specified in this file.
++
++# For more details on how to configure your build environment visit
++# http://www.gradle.org/docs/current/userguide/build_environment.html
++
++# Specifies the JVM arguments used for the daemon process.
++# The setting is particularly useful for tweaking memory settings.
++org.gradle.jvmargs=-Xmx1536m
++
++# When configured, Gradle will run in incubating parallel mode.
++# This option should only be used with decoupled projects. More details, visit
++# http://www.gradle.org/docs/current/userguide/multi_project_builds.html#sec:decoupled_projects
++
++# org.gradle.parallel=true
++        
++compile_native_code=true
++
++# the absolute path of WebRTC Android checkout, please use exactly the same commit as this repo.
++webrtc_repo=/Users/yuliu/local/webrtc/android/src
++# the relative path of where generated source file is put, relative to `webrtc_repo`.
++webrtc_build_dir=out/android_studio
++
++# the relative path of Android sdk jar, relative to `webrtc_repo`.
++android_jar=third_party/android_sdk/public/platforms/android-30/android.jar
++
++# the absolute path of Python 2.x executable
++py2=/opt/anaconda3/envs/python2/bin/python
++# the absolute path of protoc executable, see README about how to create it.
++protoc=/Users/yuliu/local/webrtc/android/src/out/android_debug_arm/clang_x64/protoc
++
+diff --git a/sdk/android_gradle/gradle/wrapper/gradle-wrapper.jar b/sdk/android_gradle/gradle/wrapper/gradle-wrapper.jar
+new file mode 100644
+index 0000000000000000000000000000000000000000..13372aef5e24af05341d49695ee84e5f9b594659
+GIT binary patch
+literal 53636
+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
+H-+%o-(+5aQ
+
+literal 0
+HcmV?d00001
+
+diff --git a/sdk/android_gradle/gradle/wrapper/gradle-wrapper.properties b/sdk/android_gradle/gradle/wrapper/gradle-wrapper.properties
+new file mode 100644
+index 0000000000..d210fbf741
+--- /dev/null
++++ b/sdk/android_gradle/gradle/wrapper/gradle-wrapper.properties
+@@ -0,0 +1,6 @@
++#Tue Jun 06 09:26:20 CST 2017
++distributionBase=GRADLE_USER_HOME
++distributionPath=wrapper/dists
++zipStoreBase=GRADLE_USER_HOME
++zipStorePath=wrapper/dists
++distributionUrl=https\://services.gradle.org/distributions/gradle-6.2.2-all.zip
+diff --git a/sdk/android_gradle/gradlew b/sdk/android_gradle/gradlew
+new file mode 100755
+index 0000000000..9d82f78915
+--- /dev/null
++++ b/sdk/android_gradle/gradlew
+@@ -0,0 +1,160 @@
++#!/usr/bin/env bash
++
++##############################################################################
++##
++##  Gradle start up script for UN*X
++##
++##############################################################################
++
++# Add default JVM options here. You can also use JAVA_OPTS and GRADLE_OPTS to pass JVM options to this script.
++DEFAULT_JVM_OPTS=""
++
++APP_NAME="Gradle"
++APP_BASE_NAME=`basename "$0"`
++
++# Use the maximum available, or set MAX_FD != -1 to use that value.
++MAX_FD="maximum"
++
++warn ( ) {
++    echo "$*"
++}
++
++die ( ) {
++    echo
++    echo "$*"
++    echo
++    exit 1
++}
++
++# OS specific support (must be 'true' or 'false').
++cygwin=false
++msys=false
++darwin=false
++case "`uname`" in
++  CYGWIN* )
++    cygwin=true
++    ;;
++  Darwin* )
++    darwin=true
++    ;;
++  MINGW* )
++    msys=true
++    ;;
++esac
++
++# Attempt to set APP_HOME
++# Resolve links: $0 may be a link
++PRG="$0"
++# Need this for relative symlinks.
++while [ -h "$PRG" ] ; do
++    ls=`ls -ld "$PRG"`
++    link=`expr "$ls" : '.*-> \(.*\)$'`
++    if expr "$link" : '/.*' > /dev/null; then
++        PRG="$link"
++    else
++        PRG=`dirname "$PRG"`"/$link"
++    fi
++done
++SAVED="`pwd`"
++cd "`dirname \"$PRG\"`/" >/dev/null
++APP_HOME="`pwd -P`"
++cd "$SAVED" >/dev/null
++
++CLASSPATH=$APP_HOME/gradle/wrapper/gradle-wrapper.jar
++
++# Determine the Java command to use to start the JVM.
++if [ -n "$JAVA_HOME" ] ; then
++    if [ -x "$JAVA_HOME/jre/sh/java" ] ; then
++        # IBM's JDK on AIX uses strange locations for the executables
++        JAVACMD="$JAVA_HOME/jre/sh/java"
++    else
++        JAVACMD="$JAVA_HOME/bin/java"
++    fi
++    if [ ! -x "$JAVACMD" ] ; then
++        die "ERROR: JAVA_HOME is set to an invalid directory: $JAVA_HOME
++
++Please set the JAVA_HOME variable in your environment to match the
++location of your Java installation."
++    fi
++else
++    JAVACMD="java"
++    which java >/dev/null 2>&1 || die "ERROR: JAVA_HOME is not set and no 'java' command could be found in your PATH.
++
++Please set the JAVA_HOME variable in your environment to match the
++location of your Java installation."
++fi
++
++# Increase the maximum file descriptors if we can.
++if [ "$cygwin" = "false" -a "$darwin" = "false" ] ; then
++    MAX_FD_LIMIT=`ulimit -H -n`
++    if [ $? -eq 0 ] ; then
++        if [ "$MAX_FD" = "maximum" -o "$MAX_FD" = "max" ] ; then
++            MAX_FD="$MAX_FD_LIMIT"
++        fi
++        ulimit -n $MAX_FD
++        if [ $? -ne 0 ] ; then
++            warn "Could not set maximum file descriptor limit: $MAX_FD"
++        fi
++    else
++        warn "Could not query maximum file descriptor limit: $MAX_FD_LIMIT"
++    fi
++fi
++
++# For Darwin, add options to specify how the application appears in the dock
++if $darwin; then
++    GRADLE_OPTS="$GRADLE_OPTS \"-Xdock:name=$APP_NAME\" \"-Xdock:icon=$APP_HOME/media/gradle.icns\""
++fi
++
++# For Cygwin, switch paths to Windows format before running java
++if $cygwin ; then
++    APP_HOME=`cygpath --path --mixed "$APP_HOME"`
++    CLASSPATH=`cygpath --path --mixed "$CLASSPATH"`
++    JAVACMD=`cygpath --unix "$JAVACMD"`
++
++    # We build the pattern for arguments to be converted via cygpath
++    ROOTDIRSRAW=`find -L / -maxdepth 1 -mindepth 1 -type d 2>/dev/null`
++    SEP=""
++    for dir in $ROOTDIRSRAW ; do
++        ROOTDIRS="$ROOTDIRS$SEP$dir"
++        SEP="|"
++    done
++    OURCYGPATTERN="(^($ROOTDIRS))"
++    # Add a user-defined pattern to the cygpath arguments
++    if [ "$GRADLE_CYGPATTERN" != "" ] ; then
++        OURCYGPATTERN="$OURCYGPATTERN|($GRADLE_CYGPATTERN)"
++    fi
++    # Now convert the arguments - kludge to limit ourselves to /bin/sh
++    i=0
++    for arg in "$@" ; do
++        CHECK=`echo "$arg"|egrep -c "$OURCYGPATTERN" -`
++        CHECK2=`echo "$arg"|egrep -c "^-"`                                 ### Determine if an option
++
++        if [ $CHECK -ne 0 ] && [ $CHECK2 -eq 0 ] ; then                    ### Added a condition
++            eval `echo args$i`=`cygpath --path --ignore --mixed "$arg"`
++        else
++            eval `echo args$i`="\"$arg\""
++        fi
++        i=$((i+1))
++    done
++    case $i in
++        (0) set -- ;;
++        (1) set -- "$args0" ;;
++        (2) set -- "$args0" "$args1" ;;
++        (3) set -- "$args0" "$args1" "$args2" ;;
++        (4) set -- "$args0" "$args1" "$args2" "$args3" ;;
++        (5) set -- "$args0" "$args1" "$args2" "$args3" "$args4" ;;
++        (6) set -- "$args0" "$args1" "$args2" "$args3" "$args4" "$args5" ;;
++        (7) set -- "$args0" "$args1" "$args2" "$args3" "$args4" "$args5" "$args6" ;;
++        (8) set -- "$args0" "$args1" "$args2" "$args3" "$args4" "$args5" "$args6" "$args7" ;;
++        (9) set -- "$args0" "$args1" "$args2" "$args3" "$args4" "$args5" "$args6" "$args7" "$args8" ;;
++    esac
++fi
++
++# Split up the JVM_OPTS And GRADLE_OPTS values into an array, following the shell quoting and substitution rules
++function splitJvmOpts() {
++    JVM_OPTS=("$@")
++}
++eval splitJvmOpts $DEFAULT_JVM_OPTS $JAVA_OPTS $GRADLE_OPTS
++JVM_OPTS[${#JVM_OPTS[*]}]="-Dorg.gradle.appname=$APP_BASE_NAME"
++
++exec "$JAVACMD" "${JVM_OPTS[@]}" -classpath "$CLASSPATH" org.gradle.wrapper.GradleWrapperMain "$@"
+diff --git a/sdk/android_gradle/gradlew.bat b/sdk/android_gradle/gradlew.bat
+new file mode 100644
+index 0000000000..aec99730b4
+--- /dev/null
++++ b/sdk/android_gradle/gradlew.bat
+@@ -0,0 +1,90 @@
++@if "%DEBUG%" == "" @echo off
++@rem ##########################################################################
++@rem
++@rem  Gradle startup script for Windows
++@rem
++@rem ##########################################################################
++
++@rem Set local scope for the variables with windows NT shell
++if "%OS%"=="Windows_NT" setlocal
++
++@rem Add default JVM options here. You can also use JAVA_OPTS and GRADLE_OPTS to pass JVM options to this script.
++set DEFAULT_JVM_OPTS=
++
++set DIRNAME=%~dp0
++if "%DIRNAME%" == "" set DIRNAME=.
++set APP_BASE_NAME=%~n0
++set APP_HOME=%DIRNAME%
++
++@rem Find java.exe
++if defined JAVA_HOME goto findJavaFromJavaHome
++
++set JAVA_EXE=java.exe
++%JAVA_EXE% -version >NUL 2>&1
++if "%ERRORLEVEL%" == "0" goto init
++
++echo.
++echo ERROR: JAVA_HOME is not set and no 'java' command could be found in your PATH.
++echo.
++echo Please set the JAVA_HOME variable in your environment to match the
++echo location of your Java installation.
++
++goto fail
++
++:findJavaFromJavaHome
++set JAVA_HOME=%JAVA_HOME:"=%
++set JAVA_EXE=%JAVA_HOME%/bin/java.exe
++
++if exist "%JAVA_EXE%" goto init
++
++echo.
++echo ERROR: JAVA_HOME is set to an invalid directory: %JAVA_HOME%
++echo.
++echo Please set the JAVA_HOME variable in your environment to match the
++echo location of your Java installation.
++
++goto fail
++
++:init
++@rem Get command-line arguments, handling Windowz variants
++
++if not "%OS%" == "Windows_NT" goto win9xME_args
++if "%@eval[2+2]" == "4" goto 4NT_args
++
++:win9xME_args
++@rem Slurp the command line arguments.
++set CMD_LINE_ARGS=
++set _SKIP=2
++
++:win9xME_args_slurp
++if "x%~1" == "x" goto execute
++
++set CMD_LINE_ARGS=%*
++goto execute
++
++:4NT_args
++@rem Get arguments from the 4NT Shell from JP Software
++set CMD_LINE_ARGS=%$
++
++:execute
++@rem Setup the command line
++
++set CLASSPATH=%APP_HOME%\gradle\wrapper\gradle-wrapper.jar
++
++@rem Execute Gradle
++"%JAVA_EXE%" %DEFAULT_JVM_OPTS% %JAVA_OPTS% %GRADLE_OPTS% "-Dorg.gradle.appname=%APP_BASE_NAME%" -classpath "%CLASSPATH%" org.gradle.wrapper.GradleWrapperMain %CMD_LINE_ARGS%
++
++:end
++@rem End local scope for the variables with windows NT shell
++if "%ERRORLEVEL%"=="0" goto mainEnd
++
++:fail
++rem Set variable GRADLE_EXIT_CONSOLE if you need the _script_ return code instead of
++rem the _cmd.exe /c_ return code!
++if  not "" == "%GRADLE_EXIT_CONSOLE%" exit 1
++exit /b 1
++
++:mainEnd
++if "%OS%"=="Windows_NT" endlocal
++
++:omega
+diff --git a/sdk/android_gradle/settings.gradle b/sdk/android_gradle/settings.gradle
+new file mode 100644
+index 0000000000..c9deeadd6c
+--- /dev/null
++++ b/sdk/android_gradle/settings.gradle
+@@ -0,0 +1 @@
++include ':AppRTCMobile', ':webrtc'
+diff --git a/sdk/android_gradle/webrtc/CMakeLists.txt b/sdk/android_gradle/webrtc/CMakeLists.txt
+new file mode 100644
+index 0000000000..df3167c1b7
+--- /dev/null
++++ b/sdk/android_gradle/webrtc/CMakeLists.txt
+@@ -0,0 +1,225 @@
++cmake_minimum_required(VERSION 3.7)
++
++set(CWD ${CMAKE_CURRENT_LIST_DIR})
++
++set(TEST_CC_FILTER ".*gunit.cc|.*/mock/.*|.*mock_.*|.*/mocks/.*|.*fake.*|.*/test/.*|.*/tests/.*|.*_test_.*|.*unittest.*|.*/end_to_end_tests/.*|.*_test.cc|.*_tests.cc|.*_integrationtest.cc|.*_perftest.cc|.*test_utils.cc|.*testutils.cc|.*testclient.cc|.*test.c")
++set(OTHER_PLATFORM_CC_FILTER ".*_chromeos.cc|.*_freebsd.cc|.*_fuchsia.cc|.*/fuchsia/.*|.*_ios.cc|.*_ios.mm|.*/ios/.*|.*_mac.cc|.*_mac.mm|.*/mac/.*|.*_openbsd.cc|.*_win.cc|.*/win/.*|.*win32.*|.*/windows/.*|.*sse.cc|.*sse2.cc|.*_mips.cc|.*_mips.c")
++
++# add at first, avoid header search path, definition chaos
++add_subdirectory(third_party)
++
++add_definitions(-DWEBRTC_POSIX=1, -DWEBRTC_LINUX=1, -DWEBRTC_ANDROID=1)
++add_definitions(-DWEBRTC_ENABLE_PROTOBUF=1)
++add_definitions(-DWEBRTC_INCLUDE_INTERNAL_AUDIO_DEVICE)
++add_definitions(-DHAVE_PTHREAD -DHAVE_SCTP -DHAVE_WEBRTC_VIDEO -DHAVE_WEBRTC_VOICE)
++add_definitions(-DUSE_BUILTIN_SW_CODECS)
++add_definitions(-DENABLE_RTC_EVENT_LOG)
++add_definitions(-DWEBRTC_NON_STATIC_TRACE_EVENT_HANDLERS=0)
++
++if (${ANDROID_ABI} STREQUAL "armeabi-v7a")
++    add_definitions(-DWEBRTC_USE_BUILTIN_ISAC_FIX=1 -DWEBRTC_USE_BUILTIN_ISAC_FLOAT=0)
++else()
++    add_definitions(-DWEBRTC_USE_BUILTIN_ISAC_FIX=0 -DWEBRTC_USE_BUILTIN_ISAC_FLOAT=1)
++endif()
++
++add_definitions(-DWEBRTC_OPUS_VARIABLE_COMPLEXITY=0)
++
++add_definitions(-DNO_TCMALLOC=1)
++
++if (${ANDROID_ABI} STREQUAL "arm64-v8a")
++    add_definitions(-DWEBRTC_ARCH_ARM64 -DWEBRTC_HAS_NEON)
++elseif (${ANDROID_ABI} STREQUAL "armeabi-v7a")
++    add_definitions(-DWEBRTC_ARCH_ARM -DWEBRTC_ARCH_ARM_V7)
++endif()
++
++add_definitions(-DWEBRTC_CODEC_ILBC -DWEBRTC_CODEC_OPUS -DWEBRTC_OPUS_SUPPORT_120MS_PTIME=1 -DWEBRTC_CODEC_ISAC -DWEBRTC_CODEC_RED)
++
++add_definitions(-DWEBRTC_INTELLIGIBILITY_ENHANCER=0 -DWEBRTC_NS_FIXED)
++
++add_definitions(-DWEBRTC_APM_DEBUG_DUMP=0)
++
++add_definitions(-DHAVE_NETINET_IN_H)
++
++include_directories(
++    ${WEBRTC_REPO}
++
++    ${WEBRTC_REPO}/${WEBRTC_BUILD_DIR}/gen
++
++    ${WEBRTC_REPO}/third_party/abseil-cpp
++    ${WEBRTC_REPO}/third_party/boringssl/src/include
++    ${WEBRTC_REPO}/third_party/icu/source/common
++    ${WEBRTC_REPO}/sdk/libs/ffmpeg/include
++    ${WEBRTC_REPO}/third_party/jsoncpp/source/include
++    ${WEBRTC_REPO}/third_party/libsrtp/config
++    ${WEBRTC_REPO}/third_party/libsrtp/crypto/include
++    ${WEBRTC_REPO}/third_party/libsrtp/include
++    ${WEBRTC_REPO}/third_party/libyuv/include
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx
++    ${WEBRTC_REPO}/third_party/opus/src/include
++    ${WEBRTC_REPO}/third_party/protobuf/src
++    ${WEBRTC_REPO}/third_party/usrsctp/usrsctplib
++)
++
++file(GLOB_RECURSE src_api
++    ${WEBRTC_REPO}/api/*.cc
++)
++list(FILTER src_api EXCLUDE REGEX ${TEST_CC_FILTER})
++list(FILTER src_api EXCLUDE REGEX
++    ".*echo_canceller3_config_json.cc|.*default_task_queue_factory_gcd.cc|.*default_task_queue_factory_stdlib.cc|.*default_task_queue_factory_win.cc|.*video_stream_decoder_create.cc"
++)
++
++file(GLOB_RECURSE src_audio
++    ${WEBRTC_REPO}/audio/*.cc
++)
++list(FILTER src_audio EXCLUDE REGEX ${TEST_CC_FILTER})
++
++file(GLOB_RECURSE src_call
++    ${WEBRTC_REPO}/call/*.cc
++)
++list(FILTER src_call EXCLUDE REGEX ${TEST_CC_FILTER})
++list(APPEND src_call ${WEBRTC_REPO}/call/fake_network_pipe.cc)
++
++file(GLOB_RECURSE src_common_audio
++    ${WEBRTC_REPO}/common_audio/*.c
++    ${WEBRTC_REPO}/common_audio/*.cc
++)
++list(FILTER src_common_audio EXCLUDE REGEX ${TEST_CC_FILTER})
++list(FILTER src_common_audio EXCLUDE REGEX ${OTHER_PLATFORM_CC_FILTER})
++
++file(GLOB_RECURSE src_common_video
++    ${WEBRTC_REPO}/common_video/*.cc
++)
++list(FILTER src_common_video EXCLUDE REGEX ${TEST_CC_FILTER})
++
++file(GLOB_RECURSE src_logging
++    ${WEBRTC_REPO}/logging/rtc_event_log/encoder/*.cc
++    ${WEBRTC_REPO}/logging/rtc_event_log/events/*.cc
++    ${WEBRTC_REPO}/logging/rtc_event_log/output/*.cc
++    ${WEBRTC_REPO}/logging/rtc_event_log/ice_logger.cc
++    ${WEBRTC_REPO}/logging/rtc_event_log/rtc_event_log.cc
++    ${WEBRTC_REPO}/logging/rtc_event_log/rtc_event_log_factory.cc
++    ${WEBRTC_REPO}/logging/rtc_event_log/rtc_event_log_impl.cc
++    ${WEBRTC_REPO}/logging/rtc_event_log/rtc_stream_config.cc
++    ${WEBRTC_REPO}/${WEBRTC_BUILD_DIR}/gen/logging/*.cc
++)
++list(FILTER src_logging EXCLUDE REGEX ${TEST_CC_FILTER})
++
++file(GLOB_RECURSE src_media
++    ${WEBRTC_REPO}/media/*.cc
++)
++list(FILTER src_media EXCLUDE REGEX ${TEST_CC_FILTER})
++list(FILTER src_media EXCLUDE REGEX ".*fakertp.cc")
++
++file(GLOB_RECURSE src_modules
++    ${WEBRTC_REPO}/modules/*.c
++    ${WEBRTC_REPO}/modules/*.cc
++    ${WEBRTC_REPO}/${WEBRTC_BUILD_DIR}/gen/modules/*.cc
++)
++list(FILTER src_modules EXCLUDE REGEX ${TEST_CC_FILTER})
++list(FILTER src_modules EXCLUDE REGEX ${OTHER_PLATFORM_CC_FILTER})
++list(FILTER src_modules EXCLUDE REGEX 
++    ".*/desktop_capture/.|.*/linux/.*|.*include/audio_device_factory.cc|.*bwe_simulations.cc|.*/audio_coding/neteq/tools/.*|.*/remote_bitrate_estimator/tools/.*|.*rnn_vad_tool.cc|.*null_aec_dump_factory.cc|.*h264_color_space.cc|.*vp9_noop.cc|.*h264_decoder_impl.cc|.*h264_encoder_impl.cc|.*/android/aaudio_.*|.*ensure_initialized.cc|.*fixed_gain_controller.cc|.*click_annotate.cc"
++)
++
++file(GLOB_RECURSE src_ortc
++    ${WEBRTC_REPO}/ortc/*.cc
++)
++list(FILTER src_ortc EXCLUDE REGEX ${TEST_CC_FILTER})
++
++file(GLOB_RECURSE src_p2p
++    ${WEBRTC_REPO}/p2p/*.cc
++)
++list(FILTER src_p2p EXCLUDE REGEX ${TEST_CC_FILTER})
++
++file(GLOB_RECURSE src_pc
++    ${WEBRTC_REPO}/pc/*.cc
++)
++list(FILTER src_pc EXCLUDE REGEX ${TEST_CC_FILTER})
++list(FILTER src_pc EXCLUDE REGEX 
++    ".*peer_connection_wrapper.cc"
++)
++
++file(GLOB_RECURSE src_rtc_base
++    ${WEBRTC_REPO}/rtc_base/*.cc
++)
++list(FILTER src_rtc_base EXCLUDE REGEX ${TEST_CC_FILTER})
++list(FILTER src_rtc_base EXCLUDE REGEX ${OTHER_PLATFORM_CC_FILTER})
++list(FILTER src_rtc_base EXCLUDE REGEX 
++    ".*mac_utils.cc|.*mac_ifaddrs_converter.cc|.*test_echo_server.cc|.*task_queue_gcd.cc|.*task_queue_stdlib.cc|.*task_queue_for_test.cc|.*virtual_socket_server.cc|.*nat_socket_factory.cc|.*nat_server.cc|.*strings/json.cc"
++)
++
++file(GLOB_RECURSE src_sdk
++    ${WEBRTC_REPO}/sdk/android/*.cc
++    ${WEBRTC_REPO}/sdk/media_constraints.cc
++)
++list(FILTER src_sdk EXCLUDE REGEX ${TEST_CC_FILTER})
++list(FILTER src_sdk EXCLUDE REGEX 
++    ".*null_audio.cc|.*null_media.cc|.*null_video.cc|.*/audio_device/aaudio_.*"
++)
++
++file(GLOB_RECURSE src_stats
++    ${WEBRTC_REPO}/stats/*.cc
++)
++list(FILTER src_stats EXCLUDE REGEX ${TEST_CC_FILTER})
++
++file(GLOB_RECURSE src_system_wrappers
++    ${WEBRTC_REPO}/system_wrappers/*.cc
++)
++list(FILTER src_system_wrappers EXCLUDE REGEX ${TEST_CC_FILTER})
++list(FILTER src_system_wrappers EXCLUDE REGEX ${OTHER_PLATFORM_CC_FILTER})
++
++file(GLOB_RECURSE src_video
++    ${WEBRTC_REPO}/video/*.cc
++)
++list(FILTER src_video EXCLUDE REGEX ${TEST_CC_FILTER})
++list(FILTER src_video EXCLUDE REGEX 
++    ".*_loopback.cc|.*replay.cc|.*video_analyzer.cc|.*video_loopback_main.cc|.*video_stream_decoder_impl.cc"
++)
++
++add_library(jingle_peerconnection_so SHARED
++    ${src_api}
++    ${src_audio}
++    ${src_call}
++    ${src_common_audio}
++    ${src_common_video}
++    ${src_logging}
++    ${src_media}
++    ${src_modules}
++    ${src_ortc}
++    ${src_p2p}
++    ${src_pc}
++    ${src_rtc_base}
++    ${src_sdk}
++    ${src_stats}
++    ${src_system_wrappers}
++    ${src_video}
++)
++
++target_link_libraries(jingle_peerconnection_so
++    absl::optional
++    absl::variant
++    absl::strings
++    crypto
++    event
++    #json
++    opus
++    pffft
++    protobuf_lite
++    rnnoise
++    srtp
++    ssl
++    usrsctp
++    vpx
++    yuv
++
++    android
++    log
++    GLESv2
++    OpenSLES
++
++    z
++    ${WEBRTC_REPO}/sdk/libs/ffmpeg/lib/Android/${ANDROID_ABI}/libswresample.a
++    ${WEBRTC_REPO}/sdk/libs/ffmpeg/lib/Android/${ANDROID_ABI}/libavformat.a
++    ${WEBRTC_REPO}/sdk/libs/ffmpeg/lib/Android/${ANDROID_ABI}/libavcodec.a
++    ${WEBRTC_REPO}/sdk/libs/ffmpeg/lib/Android/${ANDROID_ABI}/libavutil.a
++)
+diff --git a/sdk/android_gradle/webrtc/build.gradle b/sdk/android_gradle/webrtc/build.gradle
+new file mode 100644
+index 0000000000..713e0f172e
+--- /dev/null
++++ b/sdk/android_gradle/webrtc/build.gradle
+@@ -0,0 +1,47 @@
++apply plugin: 'com.android.library'
++
++def compileNativeCode = "true" == rootProject.findProperty("compile_native_code")
++
++android {
++    compileSdkVersion rootProject.ext.androidCompileSdkVersion
++    buildToolsVersion rootProject.ext.androidBuildToolsVersion
++
++    defaultConfig {
++        minSdkVersion rootProject.ext.minSdkVersion
++        targetSdkVersion rootProject.ext.targetSdkVersion
++        versionCode rootProject.ext.releaseVersionCode
++        versionName rootProject.ext.releaseVersionName
++
++        sourceSets.main.java.srcDirs = [
++                "$rootProject.rootDir/../android/api",
++                "$rootProject.rootDir/../android/src/java",
++                "$rootProject.rootDir/../../rtc_base/java/src",
++                "$rootProject.rootDir/../../modules/audio_device/android/java/src",
++                "$rootProject.rootDir/webrtc/src/main/java",
++        ]
++
++        if (!compileNativeCode) {
++            sourceSets.main.jniLibs.srcDirs = ['prebuilt_libs']
++            ndk.abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'
++        }
++    }
++    buildTypes {
++        release {
++            minifyEnabled false
++            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
++        }
++    }
++    compileOptions {
++        sourceCompatibility JavaVersion.VERSION_1_8
++        targetCompatibility JavaVersion.VERSION_1_8
++    }
++}
++
++if (compileNativeCode) {
++    apply from: 'webrtc.gradle'
++}
++
++dependencies {
++    api 'com.google.code.findbugs:jsr305:3.0.2'
++    api "com.android.support:support-annotations:${rootProject.ext.androidSupportSdkVersion}"
++}
+diff --git a/sdk/android_gradle/webrtc/src/main/AndroidManifest.xml b/sdk/android_gradle/webrtc/src/main/AndroidManifest.xml
+new file mode 100644
+index 0000000000..ea1952bc74
+--- /dev/null
++++ b/sdk/android_gradle/webrtc/src/main/AndroidManifest.xml
+@@ -0,0 +1,19 @@
++<manifest xmlns:android="http://schemas.android.com/apk/res/android"
++        package="org.webrtc"
++        >
++
++    <uses-feature android:name="android.hardware.camera"/>
++    <uses-feature android:name="android.hardware.camera.autofocus"/>
++    <uses-feature
++            android:glEsVersion="0x00020000"
++            android:required="true"
++            />
++
++    <uses-permission android:name="android.permission.CAMERA"/>
++    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS"/>
++    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
++    <uses-permission android:name="android.permission.BLUETOOTH"/>
++    <uses-permission android:name="android.permission.INTERNET"/>
++    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
++    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
++</manifest>
+diff --git a/sdk/android_gradle/webrtc/src/main/java/com/piasy/avconf/AudioMixer.java b/sdk/android_gradle/webrtc/src/main/java/com/piasy/avconf/AudioMixer.java
+new file mode 100644
+index 0000000000..8c264aaf75
+--- /dev/null
++++ b/sdk/android_gradle/webrtc/src/main/java/com/piasy/avconf/AudioMixer.java
+@@ -0,0 +1,139 @@
++package com.piasy.avconf;
++
++/**
++ * Created by Piasy{github.com/Piasy} on 2019-06-06.
++ */
++public class AudioMixer {
++    private static final int REC_SSRC = 9999999;
++    private static final int MUSIC_SSRC = 9999001;
++
++    private long mNativeMixer;
++    private boolean mMusicEnabled;
++    private boolean mMusicStreaming;
++    private boolean mMicEcho;
++    private float mMusicVolume;
++    private float mMicVolume;
++
++    public AudioMixer(String backingTrack, int captureSampleRate, int captureChannelNum,
++            int frameDurationUs, boolean enableMusicSyncFix, int waitingMixDelayFrame,
++            MixerCallback callback) {
++        mNativeMixer = nativeCreate(MUSIC_SSRC, backingTrack, REC_SSRC, captureSampleRate,
++                captureChannelNum, frameDurationUs, enableMusicSyncFix, waitingMixDelayFrame,
++                callback);
++
++        mMusicEnabled = false;
++        mMusicStreaming = false;
++        mMicEcho = false;
++        mMusicVolume = 1.0F;
++        mMicVolume = 1.0F;
++    }
++
++    private static native long nativeCreate(int musicSsrc, String backingTrack, int recSsrc,
++            int captureSampleRate, int captureChannelNum, int frameDurationUs,
++            boolean enableMusicSyncFix, int waitingMixDelayFrame, MixerCallback callback);
++
++    private static native void nativeToggleEnable(long nativeMixer, int ssrc, boolean enable);
++
++    private static native void nativeToggleStreaming(long nativeMixer, int ssrc, boolean streaming);
++
++    private static native void nativeTogglePlayback(long nativeMixer, int ssrc, boolean playback);
++
++    private static native void nativeUpdateVolume(long nativeMixer, int ssrc, float volume);
++
++    private static native long nativeGetLengthMs(long nativeMixer, int ssrc);
++
++    private static native long nativeGetProgressMs(long nativeMixer, int ssrc);
++
++    private static native long nativeSeek(long nativeMixer, int ssrc, long progressMs);
++
++    private static native void nativeDestroy(long nativeMixer);
++
++    public void startMixer() {
++        mMusicEnabled = true;
++        applyMixerSettings();
++    }
++
++    public void pauseMixer() {
++        mMusicEnabled = false;
++        applyMixerSettings();
++    }
++
++    public void resumeMixer() {
++        startMixer();
++    }
++
++    public void toggleMusicStreaming(boolean streaming) {
++        mMusicStreaming = streaming;
++        applyMixerSettings();
++    }
++
++    public void toggleMicEcho(boolean micEcho) {
++        mMicEcho = micEcho;
++        applyMixerSettings();
++    }
++
++    public void setMicVolume(float volume) {
++        mMicVolume = volume;
++        applyMixerSettings();
++    }
++
++    public void setMusicVolume(float volume) {
++        mMusicVolume = volume;
++        applyMixerSettings();
++    }
++
++    public synchronized long getMusicLengthMs() {
++        if (mNativeMixer == 0) {
++            return -1;
++        }
++
++        return nativeGetLengthMs(mNativeMixer, MUSIC_SSRC);
++    }
++
++    public synchronized long getMusicProgressMs() {
++        if (mNativeMixer == 0) {
++            return -1;
++        }
++
++        return nativeGetProgressMs(mNativeMixer, MUSIC_SSRC);
++    }
++
++    public synchronized void seekMusic(long progressMs) {
++        if (mNativeMixer == 0) {
++            return;
++        }
++
++        nativeSeek(mNativeMixer, MUSIC_SSRC, progressMs);
++    }
++
++    public synchronized void stopMixer() {
++        if (mNativeMixer == 0) {
++            return;
++        }
++
++        nativeDestroy(mNativeMixer);
++        mNativeMixer = 0;
++    }
++
++    private synchronized void applyMixerSettings() {
++        if (mNativeMixer == 0) {
++            return;
++        }
++
++        nativeToggleEnable(mNativeMixer, MUSIC_SSRC, mMusicEnabled);
++        nativeTogglePlayback(mNativeMixer, MUSIC_SSRC, true);
++        nativeToggleStreaming(mNativeMixer, MUSIC_SSRC, mMusicStreaming);
++        nativeUpdateVolume(mNativeMixer, MUSIC_SSRC, mMusicVolume);
++
++        nativeToggleEnable(mNativeMixer, REC_SSRC, true);
++        nativeTogglePlayback(mNativeMixer, REC_SSRC, mMicEcho);
++        nativeToggleStreaming(mNativeMixer, REC_SSRC, true);
++        nativeUpdateVolume(mNativeMixer, REC_SSRC, mMicVolume);
++    }
++
++    public interface MixerCallback {
++        void onMixerSsrcFinished(int ssrc);
++
++        void onMixerSsrcError(int ssrc, int code);
++    }
++}
+diff --git a/sdk/android_gradle/webrtc/src/main/java/com/piasy/avconf/HijackCapturerObserver.java b/sdk/android_gradle/webrtc/src/main/java/com/piasy/avconf/HijackCapturerObserver.java
+new file mode 100644
+index 0000000000..2df4a58ee5
+--- /dev/null
++++ b/sdk/android_gradle/webrtc/src/main/java/com/piasy/avconf/HijackCapturerObserver.java
+@@ -0,0 +1,83 @@
++package com.piasy.avconf;
++
++import android.graphics.Matrix;
++import android.os.Handler;
++import android.os.Looper;
++import org.webrtc.CapturerObserver;
++import org.webrtc.Logging;
++import org.webrtc.TextureBufferImpl;
++import org.webrtc.TimestampAligner;
++import org.webrtc.VideoFrame;
++import org.webrtc.YuvConverter;
++
++/**
++ * Created by Piasy{github.com/Piasy} on 2019-12-21.
++ */
++public class HijackCapturerObserver implements CapturerObserver {
++    private static final String TAG = "HijackCapturerObserver";
++    private static final long BLACK_FRAME_INTERVAL_MS = 100;
++
++    private final Handler mainHandler = new Handler(Looper.getMainLooper());
++    private final CapturerObserver realObserver;
++    private final VideoFrame.Buffer blackBuffer;
++    private volatile TimestampAligner timestampAligner = new TimestampAligner();
++    private boolean muted = false;
++    private final Runnable blackFrameProducer = this::produceBlackFrame;
++
++    public HijackCapturerObserver(CapturerObserver realObserver) {
++        this.realObserver = realObserver;
++
++        // actually this buffer won't be used, VideoBroadcaster::OnFrame will replace it with
++        // a black frame buffer and pass modified frame to track.
++        blackBuffer = new TextureBufferImpl(480, 640, VideoFrame.TextureBuffer.Type.RGB, 0,
++                new Matrix(), mainHandler, new YuvConverter(), null);
++    }
++
++    public void toggleMute(boolean muted) {
++        Logging.d(TAG, "toggleMute " + muted);
++        this.muted = muted;
++        if (muted) {
++            // frame interval of 25 fps
++            mainHandler.postDelayed(blackFrameProducer, 40);
++        } else {
++            mainHandler.removeCallbacks(blackFrameProducer);
++        }
++    }
++
++    public void dispose() {
++        Logging.d(TAG, "dispose");
++        muted = false;
++        timestampAligner.dispose();
++        timestampAligner = null;
++        mainHandler.removeCallbacks(blackFrameProducer);
++    }
++
++    @Override
++    public void onCapturerStarted(boolean success) {
++        realObserver.onCapturerStarted(success);
++    }
++
++    @Override
++    public void onCapturerStopped() {
++        realObserver.onCapturerStopped();
++    }
++
++    @Override
++    public void onFrameCaptured(VideoFrame frame) {
++        if (!muted && timestampAligner != null) {
++            realObserver.onFrameCaptured(new VideoFrame(frame.getBuffer(), frame.getRotation(),
++                    timestampAligner.translateTimestamp(frame.getTimestampNs())));
++        }
++    }
++
++    private void produceBlackFrame() {
++        if (!muted) {
++            return;
++        }
++
++        realObserver.onFrameCaptured(
++                new VideoFrame(blackBuffer, 0, TimestampAligner.getRtcTimeNanos()));
++
++        mainHandler.postDelayed(blackFrameProducer, BLACK_FRAME_INTERVAL_MS);
++    }
++}
+diff --git a/sdk/android_gradle/webrtc/third_party/CMakeLists.txt b/sdk/android_gradle/webrtc/third_party/CMakeLists.txt
+new file mode 100644
+index 0000000000..0c54a50a6a
+--- /dev/null
++++ b/sdk/android_gradle/webrtc/third_party/CMakeLists.txt
+@@ -0,0 +1,16 @@
++cmake_minimum_required(VERSION 3.4.1)
++
++set(ENABLE_STATIC TRUE)
++
++add_subdirectory(abseil-cpp)
++add_subdirectory(boringssl)
++#add_subdirectory(jsoncpp)
++add_subdirectory(libevent)
++add_subdirectory(libsrtp)
++add_subdirectory(libvpx)
++add_subdirectory(libyuv)
++add_subdirectory(opus)
++add_subdirectory(pffft)
++add_subdirectory(protobuf)
++add_subdirectory(rnnoise)
++add_subdirectory(usrsctp)
+diff --git a/sdk/android_gradle/webrtc/third_party/abseil-cpp/CMakeLists.txt b/sdk/android_gradle/webrtc/third_party/abseil-cpp/CMakeLists.txt
+new file mode 100644
+index 0000000000..85141ab079
+--- /dev/null
++++ b/sdk/android_gradle/webrtc/third_party/abseil-cpp/CMakeLists.txt
+@@ -0,0 +1,4 @@
++cmake_minimum_required(VERSION 3.4.1)
++
++set(CMAKE_INSTALL_PREFIX /tmp)
++add_subdirectory(${WEBRTC_REPO}/third_party/abseil-cpp abseil-cpp)
+diff --git a/sdk/android_gradle/webrtc/third_party/boringssl/CMakeLists.txt b/sdk/android_gradle/webrtc/third_party/boringssl/CMakeLists.txt
+new file mode 100644
+index 0000000000..01e1cd1d19
+--- /dev/null
++++ b/sdk/android_gradle/webrtc/third_party/boringssl/CMakeLists.txt
+@@ -0,0 +1,4 @@
++cmake_minimum_required(VERSION 3.4.1)
++
++set(ANDROID true)
++add_subdirectory(${WEBRTC_REPO}/third_party/boringssl/src boringssl)
+diff --git a/sdk/android_gradle/webrtc/third_party/jsoncpp/CMakeLists.txt b/sdk/android_gradle/webrtc/third_party/jsoncpp/CMakeLists.txt
+new file mode 100644
+index 0000000000..a3f612f435
+--- /dev/null
++++ b/sdk/android_gradle/webrtc/third_party/jsoncpp/CMakeLists.txt
+@@ -0,0 +1,14 @@
++cmake_minimum_required(VERSION 3.4.1)
++
++include_directories(
++    ${WEBRTC_REPO}/third_party/jsoncpp/source/include
++)
++
++file(GLOB_RECURSE src_json
++    ${WEBRTC_REPO}/third_party/jsoncpp/source/src/lib_json/*.cpp
++)
++list(FILTER src_json EXCLUDE REGEX ${TEST_CC_FILTER})
++
++add_library(json STATIC
++    ${src_json}
++)
+diff --git a/sdk/android_gradle/webrtc/third_party/libevent/CMakeLists.txt b/sdk/android_gradle/webrtc/third_party/libevent/CMakeLists.txt
+new file mode 100644
+index 0000000000..15e14623e3
+--- /dev/null
++++ b/sdk/android_gradle/webrtc/third_party/libevent/CMakeLists.txt
+@@ -0,0 +1,33 @@
++cmake_minimum_required(VERSION 3.4.1)
++
++add_definitions(-DHAVE_CONFIG_H=1)
++
++include_directories(
++    ${WEBRTC_REPO}
++
++    ${WEBRTC_REPO}/base/third_party/libevent
++    ${WEBRTC_REPO}/base/third_party/libevent/android
++)
++
++# infered from base/third_party/libevent/BUILD.gn, the base source set, plus Android source (epoll.c)
++set(src_event
++    ${WEBRTC_REPO}/base/third_party/libevent/buffer.c
++    ${WEBRTC_REPO}/base/third_party/libevent/evbuffer.c
++    ${WEBRTC_REPO}/base/third_party/libevent/evdns.c
++    ${WEBRTC_REPO}/base/third_party/libevent/event.c
++    ${WEBRTC_REPO}/base/third_party/libevent/event_tagging.c
++    ${WEBRTC_REPO}/base/third_party/libevent/evrpc.c
++    ${WEBRTC_REPO}/base/third_party/libevent/evutil.c
++    ${WEBRTC_REPO}/base/third_party/libevent/http.c
++    ${WEBRTC_REPO}/base/third_party/libevent/log.c
++    ${WEBRTC_REPO}/base/third_party/libevent/poll.c
++    ${WEBRTC_REPO}/base/third_party/libevent/select.c
++    ${WEBRTC_REPO}/base/third_party/libevent/signal.c
++    ${WEBRTC_REPO}/base/third_party/libevent/strlcpy.c
++
++    ${WEBRTC_REPO}/base/third_party/libevent/epoll.c
++)
++
++add_library(event STATIC
++    ${src_event}
++)
+diff --git a/sdk/android_gradle/webrtc/third_party/libjpeg_turbo/CMakeLists.txt b/sdk/android_gradle/webrtc/third_party/libjpeg_turbo/CMakeLists.txt
+new file mode 100644
+index 0000000000..bd45e32b68
+--- /dev/null
++++ b/sdk/android_gradle/webrtc/third_party/libjpeg_turbo/CMakeLists.txt
+@@ -0,0 +1,13 @@
++cmake_minimum_required(VERSION 3.4.1)
++
++file(GLOB_RECURSE src_jpeg_turbo
++        ${WEBRTC_REPO}/third_party/libjpeg_turbo/*.S
++        ${WEBRTC_REPO}/third_party/libjpeg_turbo/*.c
++        )
++list(FILTER src_jpeg_turbo EXCLUDE REGEX ${TEST_CC_FILTER})
++list(FILTER src_jpeg_turbo EXCLUDE REGEX 
++        ".*ext.c|.*arith.c|.*565.c|.*bmp.c|.*djpeg.c|.*jstdhuff.c|.*altivec.c|.*bench.c|.*turbojpeg.c|.*turbojpeg-jni.c")
++
++add_library(jpeg_turbo STATIC
++        ${src_jpeg_turbo}
++        )
+diff --git a/sdk/android_gradle/webrtc/third_party/libsrtp/CMakeLists.txt b/sdk/android_gradle/webrtc/third_party/libsrtp/CMakeLists.txt
+new file mode 100644
+index 0000000000..b6a19269e3
+--- /dev/null
++++ b/sdk/android_gradle/webrtc/third_party/libsrtp/CMakeLists.txt
+@@ -0,0 +1,40 @@
++cmake_minimum_required(VERSION 3.4.1)
++
++include_directories(
++    ${WEBRTC_REPO}/third_party/boringssl/src/include
++    ${WEBRTC_REPO}/third_party/libsrtp/config
++    ${WEBRTC_REPO}/third_party/libsrtp/crypto/include
++    ${WEBRTC_REPO}/third_party/libsrtp/include
++    ${WEBRTC_REPO}/third_party/protobuf/src
++)
++
++add_definitions(
++    -DHAVE_CONFIG_H
++    -DOPENSSL
++    -DHAVE_STDLIB_H
++    -DHAVE_STRING_H
++    -DHAVE_STDINT_H
++    -DHAVE_INTTYPES_H
++    -DHAVE_INT16_T
++    -DHAVE_INT32_T
++    -DHAVE_INT8_T
++    -DHAVE_UINT16_T
++    -DHAVE_UINT32_T
++    -DHAVE_UINT64_T
++    -DHAVE_UINT8_T
++    -DHAVE_ARPA_INET_H
++    -DHAVE_NETINET_IN_H
++    -DHAVE_SYS_TYPES_H
++    -DHAVE_UNISTD_H
++    -DPACKAGE_STRING="libsrtp2 2.1.0-pre"
++    -DPACKAGE_VERSION="2.1.0-pre"
++)
++
++file(GLOB_RECURSE src_srtp
++    ${WEBRTC_REPO}/third_party/libsrtp/*.c
++)
++list(FILTER src_srtp EXCLUDE REGEX ${TEST_CC_FILTER})
++
++add_library(srtp STATIC
++    ${src_srtp}
++)
+diff --git a/sdk/android_gradle/webrtc/third_party/libvpx/CMakeLists.txt b/sdk/android_gradle/webrtc/third_party/libvpx/CMakeLists.txt
+new file mode 100644
+index 0000000000..1204a92db9
+--- /dev/null
++++ b/sdk/android_gradle/webrtc/third_party/libvpx/CMakeLists.txt
+@@ -0,0 +1,228 @@
++cmake_minimum_required(VERSION 3.4.1)
++
++include_directories(
++    ${WEBRTC_REPO}/third_party/libvpx/source/config
++    ${WEBRTC_REPO}/third_party/libvpx/source/config/linux/arm64
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx
++)
++
++# extracted from `libvpx_srcs_arm64` of third_party/libvpx/libvpx_srcs.gni
++# python extract_src_from_gn.py third_party/libvpx/libvpx_srcs.gni libvpx_srcs_arm64 '    ${WEBRTC_REPO}/'
++set(src_vpx_arm64
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/common/alloccommon.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/common/arm/loopfilter_arm.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/common/arm/neon/bilinearpredict_neon.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/common/arm/neon/copymem_neon.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/common/arm/neon/dc_only_idct_add_neon.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/common/arm/neon/dequant_idct_neon.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/common/arm/neon/dequantizeb_neon.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/common/arm/neon/idct_blk_neon.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/common/arm/neon/iwalsh_neon.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/common/arm/neon/loopfiltersimplehorizontaledge_neon.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/common/arm/neon/loopfiltersimpleverticaledge_neon.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/common/arm/neon/mbloopfilter_neon.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/common/arm/neon/shortidct4x4llm_neon.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/common/arm/neon/sixtappredict_neon.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/common/arm/neon/vp8_loopfilter_neon.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/common/blockd.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/common/dequantize.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/common/entropy.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/common/entropymode.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/common/entropymv.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/common/extend.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/common/filter.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/common/findnearmv.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/common/generic/systemdependent.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/common/idct_blk.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/common/idctllm.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/common/loopfilter_filters.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/common/mbpitch.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/common/mfqe.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/common/modecont.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/common/postproc.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/common/quant_common.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/common/reconinter.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/common/reconintra.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/common/reconintra4x4.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/common/rtcd.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/common/setupintrarecon.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/common/swapyv12buffer.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/common/treecoder.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/common/vp8_loopfilter.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/common/vp8_skin_detection.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/decoder/dboolhuff.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/decoder/decodeframe.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/decoder/decodemv.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/decoder/detokenize.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/decoder/onyxd_if.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/decoder/threading.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/encoder/arm/neon/denoising_neon.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/encoder/arm/neon/fastquantizeb_neon.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/encoder/arm/neon/shortfdct_neon.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/encoder/arm/neon/vp8_shortwalsh4x4_neon.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/encoder/bitstream.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/encoder/boolhuff.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/encoder/copy_c.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/encoder/dct.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/encoder/denoising.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/encoder/encodeframe.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/encoder/encodeintra.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/encoder/encodemb.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/encoder/encodemv.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/encoder/ethreading.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/encoder/lookahead.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/encoder/mcomp.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/encoder/modecosts.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/encoder/mr_dissim.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/encoder/onyx_if.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/encoder/pickinter.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/encoder/picklpf.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/encoder/ratectrl.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/encoder/rdopt.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/encoder/segmentation.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/encoder/tokenize.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/encoder/treewriter.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/encoder/vp8_quantize.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/vp8_cx_iface.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/vp8_dx_iface.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/common/arm/neon/vp9_iht16x16_add_neon.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/common/arm/neon/vp9_iht4x4_add_neon.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/common/arm/neon/vp9_iht8x8_add_neon.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/common/vp9_alloccommon.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/common/vp9_blockd.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/common/vp9_common_data.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/common/vp9_entropy.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/common/vp9_entropymode.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/common/vp9_entropymv.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/common/vp9_filter.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/common/vp9_frame_buffers.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/common/vp9_idct.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/common/vp9_loopfilter.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/common/vp9_mfqe.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/common/vp9_mvref_common.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/common/vp9_postproc.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/common/vp9_pred_common.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/common/vp9_quant_common.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/common/vp9_reconinter.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/common/vp9_reconintra.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/common/vp9_rtcd.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/common/vp9_scale.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/common/vp9_scan.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/common/vp9_seg_common.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/common/vp9_thread_common.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/common/vp9_tile_common.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/decoder/vp9_decodeframe.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/decoder/vp9_decodemv.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/decoder/vp9_decoder.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/decoder/vp9_detokenize.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/decoder/vp9_dsubexp.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/decoder/vp9_job_queue.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/encoder/arm/neon/vp9_denoiser_neon.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/encoder/arm/neon/vp9_error_neon.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/encoder/arm/neon/vp9_frame_scale_neon.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/encoder/arm/neon/vp9_quantize_neon.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/encoder/vp9_aq_cyclicrefresh.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/encoder/vp9_bitstream.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/encoder/vp9_context_tree.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/encoder/vp9_cost.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/encoder/vp9_dct.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/encoder/vp9_denoiser.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/encoder/vp9_encodeframe.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/encoder/vp9_encodemb.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/encoder/vp9_encodemv.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/encoder/vp9_encoder.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/encoder/vp9_ethread.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/encoder/vp9_extend.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/encoder/vp9_frame_scale.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/encoder/vp9_lookahead.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/encoder/vp9_mcomp.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/encoder/vp9_multi_thread.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/encoder/vp9_noise_estimate.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/encoder/vp9_picklpf.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/encoder/vp9_pickmode.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/encoder/vp9_quantize.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/encoder/vp9_ratectrl.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/encoder/vp9_rd.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/encoder/vp9_rdopt.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/encoder/vp9_resize.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/encoder/vp9_segmentation.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/encoder/vp9_skin_detection.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/encoder/vp9_speed_features.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/encoder/vp9_subexp.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/encoder/vp9_svc_layercontext.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/encoder/vp9_tokenize.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/encoder/vp9_treewriter.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/vp9_cx_iface.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp9/vp9_dx_iface.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vpx/src/vpx_codec.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vpx/src/vpx_decoder.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vpx/src/vpx_encoder.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vpx/src/vpx_image.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vpx_dsp/add_noise.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vpx_dsp/arm/avg_neon.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vpx_dsp/arm/avg_pred_neon.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vpx_dsp/arm/deblock_neon.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vpx_dsp/arm/fdct16x16_neon.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vpx_dsp/arm/fdct32x32_neon.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vpx_dsp/arm/fdct_neon.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vpx_dsp/arm/fdct_partial_neon.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vpx_dsp/arm/fwd_txfm_neon.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vpx_dsp/arm/hadamard_neon.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vpx_dsp/arm/idct16x16_1_add_neon.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vpx_dsp/arm/idct16x16_add_neon.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vpx_dsp/arm/idct32x32_135_add_neon.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vpx_dsp/arm/idct32x32_1_add_neon.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vpx_dsp/arm/idct32x32_34_add_neon.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vpx_dsp/arm/idct32x32_add_neon.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vpx_dsp/arm/idct4x4_1_add_neon.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vpx_dsp/arm/idct4x4_add_neon.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vpx_dsp/arm/idct8x8_1_add_neon.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vpx_dsp/arm/idct8x8_add_neon.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vpx_dsp/arm/intrapred_neon.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vpx_dsp/arm/loopfilter_neon.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vpx_dsp/arm/quantize_neon.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vpx_dsp/arm/sad4d_neon.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vpx_dsp/arm/sad_neon.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vpx_dsp/arm/subpel_variance_neon.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vpx_dsp/arm/subtract_neon.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vpx_dsp/arm/sum_squares_neon.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vpx_dsp/arm/variance_neon.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vpx_dsp/arm/vpx_convolve8_neon.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vpx_dsp/arm/vpx_convolve_avg_neon.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vpx_dsp/arm/vpx_convolve_copy_neon.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vpx_dsp/arm/vpx_convolve_neon.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vpx_dsp/arm/vpx_scaled_convolve8_neon.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vpx_dsp/avg.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vpx_dsp/bitreader.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vpx_dsp/bitreader_buffer.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vpx_dsp/bitwriter.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vpx_dsp/bitwriter_buffer.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vpx_dsp/deblock.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vpx_dsp/fwd_txfm.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vpx_dsp/intrapred.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vpx_dsp/inv_txfm.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vpx_dsp/loopfilter.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vpx_dsp/prob.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vpx_dsp/psnr.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vpx_dsp/quantize.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vpx_dsp/sad.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vpx_dsp/skin_detection.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vpx_dsp/subtract.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vpx_dsp/sum_squares.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vpx_dsp/variance.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vpx_dsp/vpx_convolve.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vpx_dsp/vpx_dsp_rtcd.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vpx_mem/vpx_mem.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vpx_ports/arm_cpudetect.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vpx_scale/generic/gen_scalers.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vpx_scale/generic/vpx_scale.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vpx_scale/generic/yv12config.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vpx_scale/generic/yv12extend.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vpx_scale/vpx_scale_rtcd.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vpx_util/vpx_thread.c
++    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vpx_util/vpx_write_yuv_frame.c
++)
++
++add_library(vpx STATIC
++    ${src_vpx_arm64}
++)
+diff --git a/sdk/android_gradle/webrtc/third_party/libyuv/CMakeLists.txt b/sdk/android_gradle/webrtc/third_party/libyuv/CMakeLists.txt
+new file mode 100644
+index 0000000000..8b45ea1660
+--- /dev/null
++++ b/sdk/android_gradle/webrtc/third_party/libyuv/CMakeLists.txt
+@@ -0,0 +1,3 @@
++cmake_minimum_required(VERSION 3.4.1)
++
++add_subdirectory(${WEBRTC_REPO}/third_party/libyuv libyuv)
+diff --git a/sdk/android_gradle/webrtc/third_party/opus/CMakeLists.txt b/sdk/android_gradle/webrtc/third_party/opus/CMakeLists.txt
+new file mode 100644
+index 0000000000..db05bb1ed4
+--- /dev/null
++++ b/sdk/android_gradle/webrtc/third_party/opus/CMakeLists.txt
+@@ -0,0 +1,23 @@
++cmake_minimum_required(VERSION 3.4.1)
++
++add_definitions(-DOPUS_BUILD -DOPUS_EXPORT= -DHAVE_LRINT -DHAVE_LRINTF -DVAR_ARRAYS -DOPUS_WILL_BE_SLOW -DFIXED_POINT)
++
++include_directories(
++    ${WEBRTC_REPO}/third_party/opus/src/celt
++    ${WEBRTC_REPO}/third_party/opus/src/include
++    ${WEBRTC_REPO}/third_party/opus/src/silk
++    ${WEBRTC_REPO}/third_party/opus/src/silk/fixed
++)
++
++set(OPUS_SRC_FILTER ".*opus_custom_demo.c|.*mlp_train.c|.*opus_compare.c|.*opus_demo.c|.*repacketizer_demo.c")
++file(GLOB src_opus_arm64
++    ${WEBRTC_REPO}/third_party/opus/src/celt/*.c
++    ${WEBRTC_REPO}/third_party/opus/src/silk/*.c
++    ${WEBRTC_REPO}/third_party/opus/src/silk/fixed/*.c
++    ${WEBRTC_REPO}/third_party/opus/src/src/*.c
++)
++list(FILTER src_opus_arm64 EXCLUDE REGEX ${OPUS_SRC_FILTER})
++
++add_library(opus STATIC
++    ${src_opus_arm64}
++)
+diff --git a/sdk/android_gradle/webrtc/third_party/pffft/CMakeLists.txt b/sdk/android_gradle/webrtc/third_party/pffft/CMakeLists.txt
+new file mode 100644
+index 0000000000..56d056e031
+--- /dev/null
++++ b/sdk/android_gradle/webrtc/third_party/pffft/CMakeLists.txt
+@@ -0,0 +1,13 @@
++cmake_minimum_required(VERSION 3.4.1)
++
++include_directories(
++    ${WEBRTC_REPO}/third_party/pffft/src
++)
++
++file(GLOB src_pffft
++    ${WEBRTC_REPO}/third_party/pffft/src/pffft.c
++)
++
++add_library(pffft STATIC
++    ${src_pffft}
++)
+diff --git a/sdk/android_gradle/webrtc/third_party/protobuf/CMakeLists.txt b/sdk/android_gradle/webrtc/third_party/protobuf/CMakeLists.txt
+new file mode 100644
+index 0000000000..b2572d49ee
+--- /dev/null
++++ b/sdk/android_gradle/webrtc/third_party/protobuf/CMakeLists.txt
+@@ -0,0 +1,43 @@
++cmake_minimum_required(VERSION 3.4.1)
++
++add_definitions(-DHAVE_PTHREAD)
++
++include_directories(
++    ${WEBRTC_REPO}/third_party/protobuf/src
++)
++
++# extracted from `protobuf_lite_sources` of third_party/protobuf/BUILD.gn
++# python extract_src_from_gn.py third_party/protobuf/BUILD.gn protobuf_lite_sources '    ${WEBRTC_REPO}/third_party/protobuf/'
++set(src_protobuf_lite
++    ${WEBRTC_REPO}/third_party/protobuf/src/google/protobuf/any_lite.cc
++    ${WEBRTC_REPO}/third_party/protobuf/src/google/protobuf/arena.cc
++    ${WEBRTC_REPO}/third_party/protobuf/src/google/protobuf/arenastring.cc
++    ${WEBRTC_REPO}/third_party/protobuf/src/google/protobuf/extension_set.cc
++    ${WEBRTC_REPO}/third_party/protobuf/src/google/protobuf/generated_enum_util.cc
++    ${WEBRTC_REPO}/third_party/protobuf/src/google/protobuf/generated_message_table_driven_lite.cc
++    ${WEBRTC_REPO}/third_party/protobuf/src/google/protobuf/generated_message_util.cc
++    ${WEBRTC_REPO}/third_party/protobuf/src/google/protobuf/implicit_weak_message.cc
++    ${WEBRTC_REPO}/third_party/protobuf/src/google/protobuf/io/coded_stream.cc
++    ${WEBRTC_REPO}/third_party/protobuf/src/google/protobuf/io/io_win32.cc
++    ${WEBRTC_REPO}/third_party/protobuf/src/google/protobuf/io/strtod.cc
++    ${WEBRTC_REPO}/third_party/protobuf/src/google/protobuf/io/zero_copy_stream.cc
++    ${WEBRTC_REPO}/third_party/protobuf/src/google/protobuf/io/zero_copy_stream_impl.cc
++    ${WEBRTC_REPO}/third_party/protobuf/src/google/protobuf/io/zero_copy_stream_impl_lite.cc
++    ${WEBRTC_REPO}/third_party/protobuf/src/google/protobuf/message_lite.cc
++    ${WEBRTC_REPO}/third_party/protobuf/src/google/protobuf/repeated_field.cc
++    ${WEBRTC_REPO}/third_party/protobuf/src/google/protobuf/stubs/bytestream.cc
++    ${WEBRTC_REPO}/third_party/protobuf/src/google/protobuf/stubs/common.cc
++    ${WEBRTC_REPO}/third_party/protobuf/src/google/protobuf/stubs/int128.cc
++    ${WEBRTC_REPO}/third_party/protobuf/src/google/protobuf/stubs/status.cc
++    ${WEBRTC_REPO}/third_party/protobuf/src/google/protobuf/stubs/statusor.cc
++    ${WEBRTC_REPO}/third_party/protobuf/src/google/protobuf/stubs/stringpiece.cc
++    ${WEBRTC_REPO}/third_party/protobuf/src/google/protobuf/stubs/stringprintf.cc
++    ${WEBRTC_REPO}/third_party/protobuf/src/google/protobuf/stubs/structurally_valid.cc
++    ${WEBRTC_REPO}/third_party/protobuf/src/google/protobuf/stubs/strutil.cc
++    ${WEBRTC_REPO}/third_party/protobuf/src/google/protobuf/stubs/time.cc
++    ${WEBRTC_REPO}/third_party/protobuf/src/google/protobuf/wire_format_lite.cc
++)
++
++add_library(protobuf_lite STATIC
++    ${src_protobuf_lite}
++)
+diff --git a/sdk/android_gradle/webrtc/third_party/rnnoise/CMakeLists.txt b/sdk/android_gradle/webrtc/third_party/rnnoise/CMakeLists.txt
+new file mode 100644
+index 0000000000..10fc623ee7
+--- /dev/null
++++ b/sdk/android_gradle/webrtc/third_party/rnnoise/CMakeLists.txt
+@@ -0,0 +1,14 @@
++cmake_minimum_required(VERSION 3.4.1)
++
++include_directories(
++    ${WEBRTC_REPO}
++)
++
++file(GLOB_RECURSE src_rnnoise
++    ${WEBRTC_REPO}/third_party/rnnoise/src/*.cc
++)
++list(FILTER src_rnnoise EXCLUDE REGEX ${TEST_CC_FILTER})
++
++add_library(rnnoise STATIC
++    ${src_rnnoise}
++)
+diff --git a/sdk/android_gradle/webrtc/third_party/usrsctp/CMakeLists.txt b/sdk/android_gradle/webrtc/third_party/usrsctp/CMakeLists.txt
+new file mode 100644
+index 0000000000..87a2c4069c
+--- /dev/null
++++ b/sdk/android_gradle/webrtc/third_party/usrsctp/CMakeLists.txt
+@@ -0,0 +1,17 @@
++cmake_minimum_required(VERSION 3.4.1)
++
++add_definitions(-DSCTP_PROCESS_LEVEL_LOCKS -DSCTP_SIMPLE_ALLOCATOR -DSCTP_USE_OPENSSL_SHA1 -D__Userspace__ -D__Userspace_os_Linux -D_GNU_SOURCE -DNON_WINDOWS_DEFINE)
++
++include_directories(
++    ${WEBRTC_REPO}/third_party/boringssl/src/include
++    ${WEBRTC_REPO}/third_party/usrsctp/usrsctplib/usrsctplib
++)
++
++file(GLOB_RECURSE src_usrsctp
++    ${WEBRTC_REPO}/third_party/usrsctp/usrsctplib/usrsctplib/*.c
++)
++list(FILTER src_usrsctp EXCLUDE REGEX ${TEST_CC_FILTER})
++
++add_library(usrsctp STATIC
++    ${src_usrsctp}
++)
+diff --git a/sdk/android_gradle/webrtc/webrtc.gradle b/sdk/android_gradle/webrtc/webrtc.gradle
+new file mode 100644
+index 0000000000..2df847b1a6
+--- /dev/null
++++ b/sdk/android_gradle/webrtc/webrtc.gradle
+@@ -0,0 +1,318 @@
++def webrtc_repo = rootProject.property("webrtc_repo")
++def webrtc_build_dir = rootProject.property("webrtc_build_dir")
++
++def android_jar = rootProject.property("android_jar")
++
++def py2 = rootProject.property("py2")
++def protoc = rootProject.property("protoc")
++
++android {
++    defaultConfig {
++        versionCode rootProject.ext.releaseVersionCode
++        versionName rootProject.ext.releaseVersionName
++
++        externalNativeBuild {
++            cmake {
++                arguments '-DANDROID_TOOLCHAIN=clang', '-DANDROID_STL=c++_shared',
++                        "-DWEBRTC_REPO=${rootProject.property("webrtc_repo")}",
++                        "-DWEBRTC_BUILD_DIR=${rootProject.property("webrtc_build_dir")}"
++                cppFlags '-std=c++14'
++                abiFilters 'arm64-v8a' //, 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'
++                //targets "protobuf_lite", "absl_base", "absl_optional", "absl_variant", "yuv", "ssl", "crypto", "event", "json", "srtp", "vpx", "opus", "rnnoise", "usrsctp"
++            }
++        }
++    }
++
++    externalNativeBuild {
++        cmake {
++            version "3.10.2"
++            path 'CMakeLists.txt'
++        }
++    }
++}
++
++task genWebrtcSrc(type: Exec) {
++    if (!new File(webrtc_repo).exists()) {
++        throw new IllegalArgumentException("webrtc_repo doesn't exist: ${webrtc_repo}")
++    }
++    if (!new File("${webrtc_repo}/${android_jar}").exists()) {
++        throw new IllegalArgumentException("android_jar doesn't exist: ${webrtc_repo}")
++    }
++    if (!new File(py2).exists()) {
++        throw new IllegalArgumentException("py2 doesn't exist: ${webrtc_repo}")
++    }
++    if (!new File(protoc).exists()) {
++        throw new IllegalArgumentException("protoc doesn't exist: ${webrtc_repo}")
++    }
++
++    def buildDirFile = new File("${webrtc_repo}/${webrtc_build_dir}")
++
++    workingDir webrtc_repo
++
++    def createBuildDir = "mkdir -p ${webrtc_repo}/${webrtc_build_dir}"
++
++    def genBuildFlags =
++            "mkdir -p ${webrtc_build_dir}/gen/base/debug/ ; " +
++                    "rspfile=${webrtc_build_dir}/gen/" +
++                    "__base_debugging_buildflags___build_toolchain_mac_clang_x64__rule.rsp && " +
++                    "echo \"--flags ENABLE_LOCATION_SOURCE=true ENABLE_PROFILING=false " +
++                    "CAN_UNWIND_WITH_FRAME_POINTERS=true UNSAFE_DEVELOPER_BUILD=true " +
++                    "CAN_UNWIND_WITH_CFI_TABLE=false\" > \${rspfile} && " +
++                    "${py2} build/write_buildflag_header.py --output base/debug/debugging_buildflags.h " +
++                    "--rulename //base\$:debugging_buildflags --gen-dir ${webrtc_build_dir}/gen " +
++                    "--definitions \${rspfile} && " +
++                    "mkdir -p ${webrtc_build_dir}/gen/base/allocator/ ; " +
++                    "rspfile=${webrtc_build_dir}/gen/" +
++                    "__base_allocator_buildflags___build_toolchain_mac_clang_x64__rule.rsp && " +
++                    "echo \"--flags USE_ALLOCATOR_SHIM=true USE_NEW_TCMALLOC=false\" > \${rspfile} && " +
++                    "${py2} build/write_buildflag_header.py --output base/allocator/buildflags.h " +
++                    "--rulename //base/allocator\$:buildflags " +
++                    "--gen-dir ${webrtc_build_dir}/gen --definitions \${rspfile}"
++
++    def genProtoSrc =
++            "mkdir -p ${webrtc_build_dir}/gen/logging/rtc_event_log ; " +
++                    "${py2} tools/protoc_wrapper/protoc_wrapper.py rtc_event_log.proto " +
++                    "--protoc ${protoc} --proto-in-dir logging/rtc_event_log " +
++                    "--cc-out-dir ${webrtc_build_dir}/gen/logging/rtc_event_log && " +
++                    "${py2} tools/protoc_wrapper/protoc_wrapper.py rtc_event_log2.proto " +
++                    "--protoc ${protoc} --proto-in-dir logging/rtc_event_log " +
++                    "--cc-out-dir ${webrtc_build_dir}/gen/logging/rtc_event_log && " +
++                    "mkdir -p ${webrtc_build_dir}/gen/modules/audio_coding/audio_network_adaptor ; " +
++                    "${py2} tools/protoc_wrapper/protoc_wrapper.py config.proto " +
++                    "--protoc ${protoc} --proto-in-dir modules/audio_coding/audio_network_adaptor " +
++                    "--cc-out-dir ${webrtc_build_dir}/gen/modules/audio_coding/audio_network_adaptor && " +
++                    "${py2} tools/protoc_wrapper/protoc_wrapper.py debug_dump.proto " +
++                    "--protoc ${protoc} --proto-in-dir modules/audio_coding/audio_network_adaptor " +
++                    "--cc-out-dir ${webrtc_build_dir}/gen/modules/audio_coding/audio_network_adaptor && " +
++                    "mkdir -p ${webrtc_build_dir}/gen/modules/audio_processing ; " +
++                    "${py2} tools/protoc_wrapper/protoc_wrapper.py debug.proto " +
++                    "--protoc ${protoc} --proto-in-dir modules/audio_processing " +
++                    "--cc-out-dir ${webrtc_build_dir}/gen/modules/audio_processing"
++
++    def genJni =
++            "mkdir -p ${webrtc_build_dir}/gen/sdk/android/generated_audio_device_module_base_jni ; " +
++                    "${py2} base/android/jni_generator/jni_generator.py --ptr_type=long --includes ../../../../../../sdk/android/src/jni/jni_generator_helper.h --use_proxy_hash -n \"webrtc::jni\" " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_audio_device_module_base_jni/WebRtcAudioManager_jni.h " +
++                    "--input_file sdk/android/src/java/org/webrtc/audio/WebRtcAudioManager.java" +
++                    " && " +
++
++                    "mkdir -p ${webrtc_build_dir}/gen/sdk/android/generated_base_jni ; " +
++                    "${py2} base/android/jni_generator/jni_generator.py --ptr_type=long --includes ../../../../../../sdk/android/src/jni/jni_generator_helper.h --use_proxy_hash -n \"webrtc::jni\" " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_base_jni/NetworkMonitor_jni.h " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_base_jni/NetworkMonitorAutoDetect_jni.h " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_base_jni/RefCounted_jni.h " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_base_jni/Histogram_jni.h " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_base_jni/JniCommon_jni.h " +
++                    "--input_file sdk/android/api/org/webrtc/NetworkMonitor.java " +
++                    "--input_file sdk/android/api/org/webrtc/NetworkMonitorAutoDetect.java " +
++                    "--input_file sdk/android/api/org/webrtc/RefCounted.java " +
++                    "--input_file sdk/android/src/java/org/webrtc/Histogram.java " +
++                    "--input_file sdk/android/src/java/org/webrtc/JniCommon.java" +
++                    " && " +
++
++                    "mkdir -p ${webrtc_build_dir}/gen/sdk/android/generated_builtin_audio_codecs_jni ; " +
++                    "${py2} base/android/jni_generator/jni_generator.py --ptr_type=long --includes ../../../../../../sdk/android/src/jni/jni_generator_helper.h --use_proxy_hash -n \"webrtc::jni\" " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_builtin_audio_codecs_jni/BuiltinAudioDecoderFactoryFactory_jni.h " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_builtin_audio_codecs_jni/BuiltinAudioEncoderFactoryFactory_jni.h " +
++                    "--input_file sdk/android/api/org/webrtc/BuiltinAudioDecoderFactoryFactory.java " +
++                    "--input_file sdk/android/api/org/webrtc/BuiltinAudioEncoderFactoryFactory.java " +
++                    " && " +
++
++                    "mkdir -p ${webrtc_build_dir}/gen/sdk/android/generated_external_classes_jni ; " +
++                    "${py2} base/android/jni_generator/jni_generator.py --ptr_type=long --includes ../../../../../../sdk/android/src/jni/jni_generator_helper.h --jar_file ${android_jar} " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_external_classes_jni/Integer_jni.h " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_external_classes_jni/Double_jni.h " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_external_classes_jni/Long_jni.h " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_external_classes_jni/Iterable_jni.h " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_external_classes_jni/Iterator_jni.h " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_external_classes_jni/Boolean_jni.h " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_external_classes_jni/BigInteger_jni.h " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_external_classes_jni/Map_jni.h " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_external_classes_jni/LinkedHashMap_jni.h " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_external_classes_jni/ArrayList_jni.h " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_external_classes_jni/Enum_jni.h " +
++                    "--input_file java/lang/Integer.class " +
++                    "--input_file java/lang/Double.class " +
++                    "--input_file java/lang/Long.class " +
++                    "--input_file java/lang/Iterable.class " +
++                    "--input_file java/util/Iterator.class " +
++                    "--input_file java/lang/Boolean.class " +
++                    "--input_file java/math/BigInteger.class " +
++                    "--input_file java/util/Map.class " +
++                    "--input_file java/util/LinkedHashMap.class " +
++                    "--input_file java/util/ArrayList.class " +
++                    "--input_file java/lang/Enum.class " +
++                    " && " +
++
++                    "mkdir -p ${webrtc_build_dir}/gen/sdk/android/generated_java_audio_device_module_native_jni ; " +
++                    "${py2} base/android/jni_generator/jni_generator.py --ptr_type=long --includes ../../../../../../sdk/android/src/jni/jni_generator_helper.h --use_proxy_hash -n \"webrtc::jni\" " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_java_audio_device_module_native_jni/WebRtcAudioRecord_jni.h " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_java_audio_device_module_native_jni/WebRtcAudioTrack_jni.h " +
++                    "--input_file sdk/android/src/java/org/webrtc/audio/WebRtcAudioRecord.java " +
++                    "--input_file sdk/android/src/java/org/webrtc/audio/WebRtcAudioTrack.java " +
++                    " && " +
++
++                    "mkdir -p ${webrtc_build_dir}/gen/sdk/android/generated_java_audio_jni ; " +
++                    "${py2} base/android/jni_generator/jni_generator.py --ptr_type=long --includes ../../../../../../sdk/android/src/jni/jni_generator_helper.h --use_proxy_hash -n \"webrtc::jni\" " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_java_audio_jni/JavaAudioDeviceModule_jni.h " +
++                    "--input_file sdk/android/api/org/webrtc/audio/JavaAudioDeviceModule.java " +
++                    " && " +
++
++                    "mkdir -p ${webrtc_build_dir}/gen/sdk/android/generated_libvpx_vp8_jni ; " +
++                    "${py2} base/android/jni_generator/jni_generator.py --ptr_type=long --includes ../../../../../../sdk/android/src/jni/jni_generator_helper.h --use_proxy_hash -n \"webrtc::jni\" " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_libvpx_vp8_jni/LibvpxVp8Decoder_jni.h " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_libvpx_vp8_jni/LibvpxVp8Encoder_jni.h " +
++                    "--input_file sdk/android/api/org/webrtc/LibvpxVp8Decoder.java " +
++                    "--input_file sdk/android/api/org/webrtc/LibvpxVp8Encoder.java " +
++                    " && " +
++
++                    "mkdir -p ${webrtc_build_dir}/gen/sdk/android/generated_libvpx_vp9_jni ; " +
++                    "${py2} base/android/jni_generator/jni_generator.py --ptr_type=long --includes ../../../../../../sdk/android/src/jni/jni_generator_helper.h --use_proxy_hash -n \"webrtc::jni\" " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_libvpx_vp9_jni/LibvpxVp9Decoder_jni.h " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_libvpx_vp9_jni/LibvpxVp9Encoder_jni.h " +
++                    "--input_file sdk/android/api/org/webrtc/LibvpxVp9Decoder.java " +
++                    "--input_file sdk/android/api/org/webrtc/LibvpxVp9Encoder.java " +
++                    " && " +
++
++                    "mkdir -p ${webrtc_build_dir}/gen/sdk/android/generated_logging_jni ; " +
++                    "${py2} base/android/jni_generator/jni_generator.py --ptr_type=long --includes ../../../../../../sdk/android/src/jni/jni_generator_helper.h --use_proxy_hash " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_logging_jni/JNILogging_jni.h " +
++                    "--input_file sdk/android/src/java/org/webrtc/JNILogging.java " +
++                    " && " +
++
++                    "mkdir -p ${webrtc_build_dir}/gen/sdk/android/generated_metrics_jni ; " +
++                    "${py2} base/android/jni_generator/jni_generator.py --ptr_type=long --includes ../../../../../../sdk/android/src/jni/jni_generator_helper.h --use_proxy_hash -n \"webrtc::jni\" " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_metrics_jni/Metrics_jni.h " +
++                    "--input_file sdk/android/api/org/webrtc/Metrics.java " +
++                    " && " +
++
++                    "mkdir -p ${webrtc_build_dir}/gen/sdk/android/generated_native_api_jni ; " +
++                    "${py2} base/android/jni_generator/jni_generator.py --ptr_type=long --includes ../../../../../../sdk/android/src/jni/jni_generator_helper.h --use_proxy_hash -n \"webrtc::jni\" " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_native_api_jni/JniHelper_jni.h " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_native_api_jni/WebRtcClassLoader_jni.h " +
++                    "--input_file sdk/android/src/java/org/webrtc/JniHelper.java " +
++                    "--input_file sdk/android/src/java/org/webrtc/WebRtcClassLoader.java " +
++                    " && " +
++
++                    "mkdir -p ${webrtc_build_dir}/gen/sdk/android/generated_peerconnection_jni ; " +
++                    "${py2} base/android/jni_generator/jni_generator.py --ptr_type=long --includes ../../../../../../sdk/android/src/jni/jni_generator_helper.h --use_proxy_hash -n \"webrtc::jni\" " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_peerconnection_jni/AudioTrack_jni.h " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_peerconnection_jni/CallSessionFileRotatingLogSink_jni.h " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_peerconnection_jni/CandidatePairChangeEvent_jni.h " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_peerconnection_jni/CryptoOptions_jni.h " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_peerconnection_jni/DataChannel_jni.h " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_peerconnection_jni/DtmfSender_jni.h " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_peerconnection_jni/IceCandidate_jni.h " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_peerconnection_jni/MediaConstraints_jni.h " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_peerconnection_jni/MediaSource_jni.h " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_peerconnection_jni/MediaStream_jni.h " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_peerconnection_jni/MediaStreamTrack_jni.h " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_peerconnection_jni/PeerConnection_jni.h " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_peerconnection_jni/PeerConnectionFactory_jni.h " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_peerconnection_jni/RTCStats_jni.h " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_peerconnection_jni/RTCStatsCollectorCallback_jni.h " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_peerconnection_jni/RTCStatsReport_jni.h " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_peerconnection_jni/RtcCertificatePem_jni.h " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_peerconnection_jni/RtpParameters_jni.h " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_peerconnection_jni/RtpReceiver_jni.h " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_peerconnection_jni/RtpSender_jni.h " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_peerconnection_jni/RtpTransceiver_jni.h " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_peerconnection_jni/SSLCertificateVerifier_jni.h " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_peerconnection_jni/SdpObserver_jni.h " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_peerconnection_jni/SessionDescription_jni.h " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_peerconnection_jni/StatsObserver_jni.h " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_peerconnection_jni/StatsReport_jni.h " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_peerconnection_jni/TurnCustomizer_jni.h " +
++                    "--input_file sdk/android/api/org/webrtc/AudioTrack.java " +
++                    "--input_file sdk/android/api/org/webrtc/CallSessionFileRotatingLogSink.java " +
++                    "--input_file sdk/android/api/org/webrtc/CandidatePairChangeEvent.java " +
++                    "--input_file sdk/android/api/org/webrtc/CryptoOptions.java " +
++                    "--input_file sdk/android/api/org/webrtc/DataChannel.java " +
++                    "--input_file sdk/android/api/org/webrtc/DtmfSender.java " +
++                    "--input_file sdk/android/api/org/webrtc/IceCandidate.java " +
++                    "--input_file sdk/android/api/org/webrtc/MediaConstraints.java " +
++                    "--input_file sdk/android/api/org/webrtc/MediaSource.java " +
++                    "--input_file sdk/android/api/org/webrtc/MediaStream.java " +
++                    "--input_file sdk/android/api/org/webrtc/MediaStreamTrack.java " +
++                    "--input_file sdk/android/api/org/webrtc/PeerConnection.java " +
++                    "--input_file sdk/android/api/org/webrtc/PeerConnectionFactory.java " +
++                    "--input_file sdk/android/api/org/webrtc/RTCStats.java " +
++                    "--input_file sdk/android/api/org/webrtc/RTCStatsCollectorCallback.java " +
++                    "--input_file sdk/android/api/org/webrtc/RTCStatsReport.java " +
++                    "--input_file sdk/android/api/org/webrtc/RtcCertificatePem.java " +
++                    "--input_file sdk/android/api/org/webrtc/RtpParameters.java " +
++                    "--input_file sdk/android/api/org/webrtc/RtpReceiver.java " +
++                    "--input_file sdk/android/api/org/webrtc/RtpSender.java " +
++                    "--input_file sdk/android/api/org/webrtc/RtpTransceiver.java " +
++                    "--input_file sdk/android/api/org/webrtc/SSLCertificateVerifier.java " +
++                    "--input_file sdk/android/api/org/webrtc/SdpObserver.java " +
++                    "--input_file sdk/android/api/org/webrtc/SessionDescription.java " +
++                    "--input_file sdk/android/api/org/webrtc/StatsObserver.java " +
++                    "--input_file sdk/android/api/org/webrtc/StatsReport.java " +
++                    "--input_file sdk/android/api/org/webrtc/TurnCustomizer.java " +
++                    " && " +
++
++                    "mkdir -p ${webrtc_build_dir}/gen/sdk/android/generated_video_jni ; " +
++                    "${py2} base/android/jni_generator/jni_generator.py --ptr_type=long --includes ../../../../../../sdk/android/src/jni/jni_generator_helper.h --use_proxy_hash -n \"webrtc::jni\" " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_video_jni/EncodedImage_jni.h " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_video_jni/JavaI420Buffer_jni.h " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_video_jni/MediaCodecVideoDecoder_jni.h " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_video_jni/MediaCodecVideoEncoder_jni.h " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_video_jni/TimestampAligner_jni.h " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_video_jni/VideoCodecInfo_jni.h " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_video_jni/VideoCodecStatus_jni.h " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_video_jni/VideoDecoder_jni.h " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_video_jni/VideoDecoderFactory_jni.h " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_video_jni/VideoDecoderFallback_jni.h " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_video_jni/VideoEncoder_jni.h " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_video_jni/VideoEncoderFactory_jni.h " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_video_jni/VideoEncoderFallback_jni.h " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_video_jni/VideoFrame_jni.h " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_video_jni/VideoSink_jni.h " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_video_jni/VideoTrack_jni.h " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_video_jni/YuvHelper_jni.h " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_video_jni/H264Utils_jni.h " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_video_jni/NV12Buffer_jni.h " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_video_jni/NV21Buffer_jni.h " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_video_jni/NativeAndroidVideoTrackSource_jni.h " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_video_jni/NativeCapturerObserver_jni.h " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_video_jni/VideoDecoderWrapper_jni.h " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_video_jni/VideoEncoderWrapper_jni.h " +
++                    "--output_file ${webrtc_build_dir}/gen/sdk/android/generated_video_jni/WrappedNativeI420Buffer_jni.h " +
++                    "--input_file sdk/android/api/org/webrtc/EncodedImage.java " +
++                    "--input_file sdk/android/api/org/webrtc/JavaI420Buffer.java " +
++                    "--input_file sdk/android/api/org/webrtc/MediaCodecVideoDecoder.java " +
++                    "--input_file sdk/android/api/org/webrtc/MediaCodecVideoEncoder.java " +
++                    "--input_file sdk/android/api/org/webrtc/TimestampAligner.java " +
++                    "--input_file sdk/android/api/org/webrtc/VideoCodecInfo.java " +
++                    "--input_file sdk/android/api/org/webrtc/VideoCodecStatus.java " +
++                    "--input_file sdk/android/api/org/webrtc/VideoDecoder.java " +
++                    "--input_file sdk/android/api/org/webrtc/VideoDecoderFactory.java " +
++                    "--input_file sdk/android/api/org/webrtc/VideoDecoderFallback.java " +
++                    "--input_file sdk/android/api/org/webrtc/VideoEncoder.java " +
++                    "--input_file sdk/android/api/org/webrtc/VideoEncoderFactory.java " +
++                    "--input_file sdk/android/api/org/webrtc/VideoEncoderFallback.java " +
++                    "--input_file sdk/android/api/org/webrtc/VideoFrame.java " +
++                    "--input_file sdk/android/api/org/webrtc/VideoSink.java " +
++                    "--input_file sdk/android/api/org/webrtc/VideoTrack.java " +
++                    "--input_file sdk/android/api/org/webrtc/YuvHelper.java " +
++                    "--input_file sdk/android/src/java/org/webrtc/H264Utils.java " +
++                    "--input_file sdk/android/src/java/org/webrtc/NV12Buffer.java " +
++                    "--input_file sdk/android/src/java/org/webrtc/NV21Buffer.java " +
++                    "--input_file sdk/android/src/java/org/webrtc/NativeAndroidVideoTrackSource.java " +
++                    "--input_file sdk/android/src/java/org/webrtc/NativeCapturerObserver.java " +
++                    "--input_file sdk/android/src/java/org/webrtc/VideoDecoderWrapper.java " +
++                    "--input_file sdk/android/src/java/org/webrtc/VideoEncoderWrapper.java " +
++                    "--input_file sdk/android/src/java/org/webrtc/WrappedNativeI420Buffer.java "
++
++    def cmd = ['echo', 'already generated']
++    if (!buildDirFile.exists()) {
++        cmd = ['sh', '-c', "${createBuildDir} && ${genBuildFlags} && ${genProtoSrc} && ${genJni}"]
++    }
++    commandLine cmd
++}
++
++afterEvaluate {
++    externalNativeBuildDebug.dependsOn(genWebrtcSrc)
++    externalNativeBuildRelease.dependsOn(genWebrtcSrc)
++}
+diff --git a/sdk/android_gradle/webrtc_src_extractor.py b/sdk/android_gradle/webrtc_src_extractor.py
+new file mode 100644
+index 0000000000..b6981702f8
+--- /dev/null
++++ b/sdk/android_gradle/webrtc_src_extractor.py
+@@ -0,0 +1,138 @@
++import sys
++import glob
++import subprocess
++
++src_black_list_keywords = [
++    'googletest', 'gtest', 'mock', '_unittest', '_test', '_integrationtest', '_benchmark'
++]
++src_white_list = [
++    'rtc_base/gtest_prod_util.h'
++]
++special_related_src = {
++    'common_audio/include/audio_util.h': [
++        'common_audio/audio_util.cc',
++    ],
++    'system_wrappers/include/metrics.h': [
++        # 'system_wrappers/include/metrics_default.h',
++        # header won't be included in `find_sources`, 
++        # but will be included in `extract_includes`
++        'system_wrappers/source/metrics_default.cc',
++    ],
++    'third_party/abseil-cpp/absl/strings/string_view.cc': [
++        'third_party/abseil-cpp/absl/strings/internal/memutil.cc',
++    ],
++}
++
++def file_not_blacklisted(file):
++    for keyword in src_black_list_keywords:
++        if keyword in file:
++            discard = True
++            for white_list_file in src_white_list:
++                if white_list_file in file:
++                    discard = False
++            if discard:
++                return False
++    return True
++
++def find_full_path(src_set, file):
++    for src in src_set:
++        if src.endswith(file):
++            return src
++    return None
++
++def find_sources(all_src, headers):
++    sources = []
++    for header in headers:
++        name = '.'.join(header.split('.')[:-1])
++        for src in all_src:
++            if src.startswith(name) and file_not_blacklisted(src):
++                sources.append(src)
++                break
++        for special_header, related_srcs in special_related_src.items():
++            if header.endswith(special_header):
++                for related_src in related_srcs:
++                    full_path = find_full_path(all_src, related_src)
++                    if full_path is not None:
++                        sources.append(full_path)
++    return sources
++
++def get_full_path(headers, sources, file):
++    header = find_full_path(headers, file)
++    if header is not None:
++        return header
++    source = find_full_path(sources, file)
++    if source is not None:
++        return source
++    return None
++
++def extract_includes(headers, file):
++    with open(file, 'r') as f:
++        includes = [line for line in f.read().split('\n') if line.startswith('#include') and '\"' in line]
++        includes = [line.split('\"')[1] for line in includes]
++
++        results = []
++        for include in includes:
++            full_path = get_full_path(headers, [], include)
++            if full_path is not None and file_not_blacklisted(full_path):
++                results.append(full_path)
++        return results
++
++def find_all_related_files(headers, sources, wanted):
++    # 对 candidates 中的每个 file，读出直接相关的头文件和源文件 related，把 file 加入到 searched 中，
++    # 同时对于 related 里不在 searched 中的项目，加入到 new_candidates 中，
++    # candidates 遍历结束后，把 new_candidates 赋值给 candidates，继续遍历，
++    # 直到 candidates 为空。
++    # candidates 初始化为 wanted。
++    # searched 就是所求。
++
++    searched = set()
++    candidates = []
++    candidates.extend(wanted)
++    while len(candidates) != 0:
++        new_candidates = []
++        for file in candidates:
++            full_path = get_full_path(headers, sources, file)
++            if full_path is None:
++                continue
++
++            searched.add(full_path)
++            related_headers = extract_includes(headers, full_path)
++            related_sources = find_sources(sources, related_headers)
++
++            new_candidates.extend([f for f in related_headers if f not in searched])
++            new_candidates.extend([f for f in related_sources if f not in searched])
++
++        candidates = new_candidates
++
++        print('searched', len(searched))
++        print('candidates', len(candidates))
++    return sorted(searched)
++
++def get_parents(repo, file):
++    parts = file[len(repo):].split('/')
++    return parts[:-1]
++
++def copy_to(repo, file, dst):
++    parents = get_parents(repo, file)
++    dir = '%s/%s' % (dst, '/'.join(parents))
++    subprocess.run('mkdir -p %s' % dir, shell=True, check=True)
++    subprocess.run('cp %s %s' % (file, dir), shell=True, check=True)
++
++if __name__ == '__main__':
++    repo = sys.argv[1]
++    dst = sys.argv[2]
++    wanted = sys.argv[3:]
++
++    all_files = glob.glob('%s/**/*' % repo, recursive=True)
++    headers = [f for f in all_files if f.endswith('.h') or f.endswith('.hpp')]
++    sources = [f for f in all_files if f.endswith('.c') or f.endswith('.cc') or f.endswith('.cpp')]
++    all_files = None
++
++    print('wanted', wanted)
++    print('header', len(headers))
++    print('source', len(sources))
++
++    needed = find_all_related_files(headers, sources, wanted)
++
++    for file in needed:
++        copy_to(repo, file, dst)
+-- 
+2.13.5
+
