@@ -1,28 +1,17 @@
-**WebRTC is a free, open software project** that provides browsers and mobile
-applications with Real-Time Communications (RTC) capabilities via simple APIs.
-The WebRTC components have been optimized to best serve this purpose.
+* https://webrtc.googlesource.com/src/+/refs/heads/master/docs/native-code/android/index.md 
 
-**Our mission:** To enable rich, high-quality RTC applications to be
-developed for the browser, mobile platforms, and IoT devices, and allow them
-all to communicate via a common set of protocols.
+* fetch --nohooks webrtc_android
 
-The WebRTC initiative is a project supported by Google, Mozilla and Opera,
-amongst others.
+   gclient sync
 
-### Development
+* source activate python2
 
-See http://www.webrtc.org/native-code/development for instructions on how to get
-started developing with the native code.
+* Checkout #30432:  be99ee8f17f93e06c81e3deb4897dfa8253d3211
 
-[Authoritative list](native-api.md) of directories that contain the
-native API header files.
+* Comment out src/third_party/ijar/BUILD.gn
+  
+	 if (is_linux | …) {
+	
+  }
 
-### More info
-
- * Official web site: http://www.webrtc.org
- * Master source code repo: https://webrtc.googlesource.com/src
- * Samples and reference apps: https://github.com/webrtc
- * Mailing list: http://groups.google.com/group/discuss-webrtc
- * Continuous build: http://build.chromium.org/p/client.webrtc
- * [Coding style guide](style-guide.md)
- * [Code of conduct](CODE_OF_CONDUCT.md)
+* Apply patches
