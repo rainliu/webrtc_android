@@ -25,7 +25,7 @@
    
    3). add android_gradler
    
-   4). fix sdk/android_gradle/webrtc/CMakeList.txt:    (optional?).
+   4). fix sdk/android_gradle/webrtc/CMakeList.txt: 
    
    ${WEBRTC_REPO}/${WEBRTC_BUILD_DIR}/gen/logging/rtc_event_log/*.cc
 
