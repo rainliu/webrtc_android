@@ -28,3 +28,19 @@
    
    ${WEBRTC_REPO}/${WEBRTC_BUILD_DIR}/gen/logging/rtc_event_log/*.cc
 
+
+* How to apply patch in git?
+
+First the stats:
+
+git apply --stat a_file.patch
+
+Then a dry run to detect errors:
+
+git apply --check a_file.patch
+
+Finally, you can use git am to apply your patch as a commit: it allows you to sign off an applied patch.
+
+This can be useful for later reference.
+
+git am --signoff < a_file.patch 
