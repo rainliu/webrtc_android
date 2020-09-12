@@ -6,6 +6,8 @@
 
 * source activate python2
 
+* install golang
+
 * Checkout #30432:  be99ee8f17f93e06c81e3deb4897dfa8253d3211
 
 * Comment out src/third_party/ijar/BUILD.gn
