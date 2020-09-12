@@ -23,12 +23,12 @@
    
    3). add android_gradler
    
-   4). add sdk/libs/ffmpeg
-   
-   5). fix sdk/android_gradle/webrtc/CMakeList.txt:    
+   4). fix sdk/android_gradle/webrtc/CMakeList.txt:    (optional?).
    
    ${WEBRTC_REPO}/${WEBRTC_BUILD_DIR}/gen/logging/rtc_event_log/*.cc
 
+   5). copy sdk/libs/ffmpeg from webrtc_android.
+   
 
 * update gradle.properties in sdk/android_gradle/ 
 
