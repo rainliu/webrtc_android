@@ -13,6 +13,7 @@
 	 if (is_linux | …) {
 	
   }
+  
 
 * Apply patches
 
@@ -27,6 +28,13 @@
    5). fix sdk/android_gradle/webrtc/CMakeList.txt:    
    
    ${WEBRTC_REPO}/${WEBRTC_BUILD_DIR}/gen/logging/rtc_event_log/*.cc
+
+
+* update gradle.properties in sdk/android_gradle/ 
+
+* gn gen out/android_debug_arm --args='target_os="android" target_cpu="arm"' 
+
+* ninja -C out/android_debug_arm network_tester_config_proto_gen 
 
 
 * How to apply patch in git?
